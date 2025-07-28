@@ -1,6 +1,6 @@
 export interface ApiKeys {
   openai?: string;
-  blackforest?: string;
+  together?: string;
 }
 
 const STORAGE_KEY = "moodboard-ai-api-keys";

@@ -21,7 +21,7 @@ A Human-AI co-iterative loop. Non-linear progression. End with product requireme
 ## Model access
 
 - Use OpenAI SDK response API for text gen
-- Use blackforest for image gen
+- Use Together.ai for image gen
 
 ## OpenAI SDK docs
 
@@ -66,89 +66,32 @@ OUTPUT
 }
 ```
 
-## Blackforest docs
+## Together.ai docs
 
 INPUT
 
 ```ts
-const url = "https://api.bfl.ai/v1/flux-kontext-pro";
-const options = {
-  method: "POST",
-  headers: { "x-key": "<api-key>", "Content-Type": "application/json" },
-  body: '{"prompt":"ein fantastisches bild","input_image":"<string>","input_image_2":"<string>","input_image_3":"<string>","input_image_4":"<string>","seed":42,"aspect_ratio":"<string>","output_format":"jpeg","webhook_url":"<string>","webhook_secret":"<string>","prompt_upsampling":false,"safety_tolerance":2}',
-};
+import Together from "together-ai";
 
-try {
-  const response = await fetch(url, options);
-  const data = await response.json();
-  console.log(data);
-} catch (error) {
-  console.error(error);
-}
+const together = new Together();
+
+const response = await together.images.create({
+  model: "black-forest-labs/FLUX.1-schnell",
+  prompt: "",
+  steps: 3,
+});
+console.log(response.data[0].b64_json);
 ```
 
-OUTPUT (200)
+OUTPUT
 
 ```json
 {
-  "id": "<string>",
-  "polling_url": "<string>"
-}
-```
-
-OUTPUT (422)
-
-```json
-{
-  "detail": [
+  "data": [
     {
-      "loc": ["<string>"],
-      "msg": "<string>",
-      "type": "<string>"
+      "b64_json": "<base64-encoded-image-data>",
+      "revised_prompt": "<revised-prompt-if-applicable>"
     }
   ]
-}
-```
-
-POLLING
-
-```ts
-const url = "https://api.bfl.ai/v1/get_result";
-const options = { method: "GET", body: undefined };
-
-try {
-  const response = await fetch(url, options);
-  const data = await response.json();
-  console.log(data);
-} catch (error) {
-  console.error(error);
-}
-```
-
-OUTPUT (200)
-
-```json
-{
-  "id": "<string>",
-  "status": "Task not found",
-  "result": "<any>",
-  "progress": 123,
-  "details": {},
-  "preview": {}
-}
-```
-
-Status options: Task not found, Pending, Request Moderated, Content Moderated, Ready, Error
-
-OUTPUT (422)
-
-```json
-{
-  "id": "<string>",
-  "status": "Task not found",
-  "result": "<any>",
-  "progress": 123,
-  "details": {},
-  "preview": {}
 }
 ```

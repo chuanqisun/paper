@@ -5,8 +5,11 @@ import type { ApiKeys } from "../lib/storage";
 export interface ConnectionsViewProps {
   apiKeys: ApiKeys;
   onApiKeyChange: Subject<{ provider: keyof ApiKeys; value: string }>;
-  onTestConnection: Subject<{ provider: "openai" | "blackforest"; testInput: string }>;
-  testResult?: string;
+  onTestConnection: Subject<{ provider: "openai" | "together" }>;
+  testResults?: {
+    openai?: string;
+    together?: string;
+  };
   testLoading?: boolean;
 }
 
@@ -14,7 +17,7 @@ export function connectionsView({
   apiKeys,
   onApiKeyChange,
   onTestConnection,
-  testResult,
+  testResults,
   testLoading,
 }: ConnectionsViewProps): TemplateResult {
   const handleOpenAIChange = (e: Event) => {
@@ -22,22 +25,21 @@ export function connectionsView({
     onApiKeyChange.next({ provider: "openai", value: input.value });
   };
 
-  const handleBlackforestChange = (e: Event) => {
+  const handleTogetherChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
-    onApiKeyChange.next({ provider: "blackforest", value: input.value });
+    onApiKeyChange.next({ provider: "together", value: input.value });
   };
 
   const handleTestSubmit = (e: Event) => {
     e.preventDefault();
-    const testInput = 'Please respond "OpenAI test success!"';
 
     // Test OpenAI first
     if (apiKeys.openai) {
-      onTestConnection.next({ provider: "openai", testInput });
+      onTestConnection.next({ provider: "openai" });
     }
-    // Then test BlackForest (will be noop for now)
-    if (apiKeys.blackforest) {
-      onTestConnection.next({ provider: "blackforest", testInput });
+    // Then test Together.ai
+    if (apiKeys.together) {
+      onTestConnection.next({ provider: "together" });
     }
   };
 
@@ -55,33 +57,30 @@ export function connectionsView({
       </div>
 
       <div class="form-field">
-        <label for="blackforest-key">BlackForest Labs API Key</label>
+        <label for="together-key">Together.ai API Key</label>
         <input
-          id="blackforest-key"
+          id="together-key"
           type="password"
-          value=${apiKeys.blackforest || ""}
-          placeholder="API key for BFL"
-          @input=${handleBlackforestChange}
+          value=${apiKeys.together || ""}
+          placeholder="API key for Together.ai"
+          @input=${handleTogetherChange}
         />
       </div>
 
-      <button type="submit" ?disabled=${testLoading || (!apiKeys.openai && !apiKeys.blackforest)}>
+      <button type="submit" ?disabled=${testLoading || (!apiKeys.openai && !apiKeys.together)}>
         ${testLoading ? "Testing..." : "Test Connections"}
       </button>
 
       <div class="form-status">
         <small>
-          OpenAI: ${apiKeys.openai ? "✓ Set" : "✗ Not set"} | BlackForest:
-          ${apiKeys.blackforest ? "✓ Set" : "✗ Not set"}
+          OpenAI: ${apiKeys.openai ? "✓ Set" : "✗ Not set"}${testResults?.openai ? ` - ${testResults.openai}` : ""} |
+          Together.ai:
+          ${apiKeys.together ? "✓ Set" : "✗ Not set"}${testResults?.together
+            ? testResults.together.startsWith("data:image") || testResults.together.startsWith("http")
+              ? html` - <a href="${testResults.together}" target="_blank">View test image</a>`
+              : ` - ${testResults.together}`
+            : ""}
         </small>
-        ${testResult
-          ? html`
-              <div class="test-result">
-                <strong>Test Result:</strong>
-                <pre>${testResult}</pre>
-              </div>
-            `
-          : ""}
       </div>
     </form>
   `;
