@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*.css"
+applyTo: "**"
 ---
 
 - Minimum CSS to establish layout and functionality
