@@ -48,6 +48,11 @@ applyTo: "**"
 - Create all the observables but do NOT subscribe.
 - In the end, merge all the observables and subscribe once.
 
+## RxJS pattern in views
+
+- You should hide component's internal state within the viewe function
+- Use the `/src/lib/observe-directive.ts` to render observable inside the lit template, e.g. `<span>${observe(stream$)}</span>`
+
 ## lib/\*.ts
 
 - They should generally be observables, operators, or pure functions
