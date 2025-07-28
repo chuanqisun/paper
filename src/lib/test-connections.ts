@@ -61,9 +61,9 @@ export function testTogetherConnection(apiKey: string): Observable<string> {
         }
       }
 
-      return "Together.ai test failed: No image data received";
+      throw new Error("No image data received from Together.ai");
     } catch (error) {
-      return `Together.ai test failed: ${error instanceof Error ? error.message : "Unknown error"}`;
+      throw new Error(`Together.ai test failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
 

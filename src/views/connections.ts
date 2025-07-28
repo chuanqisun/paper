@@ -15,11 +15,14 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
   const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
   const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
   const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
-  const testLoading$ = new BehaviorSubject<boolean>(false);
+  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean }>({});
 
   // Handle test connections internally
   const handleTestConnection$ = testConnection$.pipe(
-    tap(() => testLoading$.next(true)),
+    tap(({ provider }) => {
+      const currentLoading = testLoading$.value;
+      testLoading$.next({ ...currentLoading, [provider]: true });
+    }),
     mergeMap(({ provider }) =>
       testConnection({
         provider,
@@ -28,16 +31,18 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
         tap((result) => {
           const currentResults = testResults$.value;
           const currentErrors = testErrors$.value;
+          const currentLoading = testLoading$.value;
           testResults$.next({ ...currentResults, [provider]: result });
           testErrors$.next({ ...currentErrors, [provider]: undefined });
-          testLoading$.next(false);
+          testLoading$.next({ ...currentLoading, [provider]: false });
         }),
         catchError((error) => {
           const currentResults = testResults$.value;
           const currentErrors = testErrors$.value;
+          const currentLoading = testLoading$.value;
           testResults$.next({ ...currentResults, [provider]: undefined });
           testErrors$.next({ ...currentErrors, [provider]: error.message });
-          testLoading$.next(false);
+          testLoading$.next({ ...currentLoading, [provider]: false });
           return of(null);
         }),
       ),
@@ -48,8 +53,12 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
   handleTestConnection$.subscribe();
 
   // Derived observables for template
-  const isDisabled$ = testLoading$.pipe(map((loading) => loading || (!apiKeys.openai && !apiKeys.together)));
-  const buttonText$ = testLoading$.pipe(map((loading) => (loading ? "Testing..." : "Test Connections")));
+  const isDisabled$ = testLoading$.pipe(
+    map((loading) => loading.openai || loading.together || (!apiKeys.openai && !apiKeys.together)),
+  );
+  const buttonText$ = testLoading$.pipe(
+    map((loading) => (loading.openai || loading.together ? "Testing..." : "Test Connections")),
+  );
 
   const openaiStatus$ = testLoading$.pipe(
     mergeMap((loading) =>
@@ -58,7 +67,7 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
           testErrors$.pipe(
             map((errors) => {
               if (!apiKeys.openai) return "✗ Not set";
-              if (loading) return "? Testing...";
+              if (loading.openai) return "? Testing...";
               if (errors.openai) return `✗ ${errors.openai}`;
               if (results.openai) return `✓ ${results.openai}`;
               return "✓ Set";
@@ -76,7 +85,7 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
           testErrors$.pipe(
             map((errors) => {
               if (!apiKeys.together) return html`✗ Not set`;
-              if (loading) return html`? Testing...`;
+              if (loading.together) return html`? Testing...`;
               if (errors.together) return html`✗ ${errors.together}`;
               if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
               return html`✓ Set`;
