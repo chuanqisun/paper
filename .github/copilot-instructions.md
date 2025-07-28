@@ -14,6 +14,7 @@ applyTo: "**"
 ## Workflow
 
 - Do NOT run `npm run dev` for user.
+- Do NOT run `npm run build` for user.
 - If user provided new information or changed requirements, you must update .github/copilot-instructions.md and .github/instructions/\*.instructions.md to stay up to date.
 
 ## Coding style

@@ -1,33 +1,109 @@
 import { html, type TemplateResult } from "lit-html";
-import { Subject } from "rxjs";
+import { BehaviorSubject, Subject, map, of } from "rxjs";
+import { catchError, mergeMap, tap } from "rxjs/operators";
+import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
+import { testConnection } from "../lib/test-connections";
 
 export interface ConnectionsViewProps {
   apiKeys: ApiKeys;
   onApiKeyChange: Subject<{ provider: keyof ApiKeys; value: string }>;
-  onTestConnection: Subject<{ provider: "openai" | "together" }>;
-  testResults?: {
-    openai?: string;
-    together?: string;
-  };
-  testLoading?: boolean;
 }
 
-export function connectionsView({
-  apiKeys,
-  onApiKeyChange,
-  onTestConnection,
-  testResults,
-  testLoading,
-}: ConnectionsViewProps): TemplateResult {
+export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProps): TemplateResult {
+  // Internal test streams
+  const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
+  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
+  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
+  const testLoading$ = new BehaviorSubject<boolean>(false);
+
+  // Handle test connections internally
+  const handleTestConnection$ = testConnection$.pipe(
+    tap(() => testLoading$.next(true)),
+    mergeMap(({ provider }) =>
+      testConnection({
+        provider,
+        apiKeys,
+      }).pipe(
+        tap((result) => {
+          const currentResults = testResults$.value;
+          const currentErrors = testErrors$.value;
+          testResults$.next({ ...currentResults, [provider]: result });
+          testErrors$.next({ ...currentErrors, [provider]: undefined });
+          testLoading$.next(false);
+        }),
+        catchError((error) => {
+          const currentResults = testResults$.value;
+          const currentErrors = testErrors$.value;
+          testResults$.next({ ...currentResults, [provider]: undefined });
+          testErrors$.next({ ...currentErrors, [provider]: error.message });
+          testLoading$.next(false);
+          return of(null);
+        }),
+      ),
+    ),
+  );
+
+  // Subscribe to handle test connections
+  handleTestConnection$.subscribe();
+
+  // Derived observables for template
+  const isDisabled$ = testLoading$.pipe(map((loading) => loading || (!apiKeys.openai && !apiKeys.together)));
+  const buttonText$ = testLoading$.pipe(map((loading) => (loading ? "Testing..." : "Test Connections")));
+
+  const openaiStatus$ = testLoading$.pipe(
+    mergeMap((loading) =>
+      testResults$.pipe(
+        mergeMap((results) =>
+          testErrors$.pipe(
+            map((errors) => {
+              if (!apiKeys.openai) return "✗ Not set";
+              if (loading) return "? Testing...";
+              if (errors.openai) return `✗ ${errors.openai}`;
+              if (results.openai) return `✓ ${results.openai}`;
+              return "✓ Set";
+            }),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  const togetherStatus$ = testLoading$.pipe(
+    mergeMap((loading) =>
+      testResults$.pipe(
+        mergeMap((results) =>
+          testErrors$.pipe(
+            map((errors) => {
+              if (!apiKeys.together) return html`✗ Not set`;
+              if (loading) return html`? Testing...`;
+              if (errors.together) return html`✗ ${errors.together}`;
+              if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
+              return html`✓ Set`;
+            }),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  const clearTestResults = (provider: keyof ApiKeys) => {
+    const currentResults = testResults$.value;
+    const currentErrors = testErrors$.value;
+    testResults$.next({ ...currentResults, [provider]: undefined });
+    testErrors$.next({ ...currentErrors, [provider]: undefined });
+  };
+
   const handleOpenAIChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
     onApiKeyChange.next({ provider: "openai", value: input.value });
+    clearTestResults("openai");
   };
 
   const handleTogetherChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
     onApiKeyChange.next({ provider: "together", value: input.value });
+    clearTestResults("together");
   };
 
   const handleTestSubmit = (e: Event) => {
@@ -35,11 +111,11 @@ export function connectionsView({
 
     // Test OpenAI first
     if (apiKeys.openai) {
-      onTestConnection.next({ provider: "openai" });
+      testConnection$.next({ provider: "openai" });
     }
     // Then test Together.ai
     if (apiKeys.together) {
-      onTestConnection.next({ provider: "together" });
+      testConnection$.next({ provider: "together" });
     }
   };
 
@@ -67,20 +143,10 @@ export function connectionsView({
         />
       </div>
 
-      <button type="submit" ?disabled=${testLoading || (!apiKeys.openai && !apiKeys.together)}>
-        ${testLoading ? "Testing..." : "Test Connections"}
-      </button>
+      <button type="submit" ?disabled=${observe(isDisabled$)}>${observe(buttonText$)}</button>
 
       <div class="form-status">
-        <small>
-          OpenAI: ${apiKeys.openai ? "✓ Set" : "✗ Not set"}${testResults?.openai ? ` - ${testResults.openai}` : ""} |
-          Together.ai:
-          ${apiKeys.together ? "✓ Set" : "✗ Not set"}${testResults?.together
-            ? testResults.together.startsWith("data:image") || testResults.together.startsWith("http")
-              ? html` - <a href="${testResults.together}" target="_blank">View test image</a>`
-              : ` - ${testResults.together}`
-            : ""}
-        </small>
+        <small> OpenAI: ${observe(openaiStatus$)} | Together.ai: ${observe(togetherStatus$)} </small>
       </div>
     </form>
   `;
