@@ -1,16 +1,29 @@
 import { html, type TemplateResult } from "lit-html";
 import { BehaviorSubject, Subject, map, of } from "rxjs";
-import { catchError, mergeMap, tap } from "rxjs/operators";
+import { catchError, debounceTime, distinctUntilChanged, mergeMap, tap } from "rxjs/operators";
 import { observe } from "../lib/observe-directive";
-import type { ApiKeys } from "../lib/storage";
+import { saveApiKeys, type ApiKeys } from "../lib/storage";
 import { testConnection } from "../lib/test-connections";
 
 export interface ConnectionsViewProps {
-  apiKeys: ApiKeys;
-  onApiKeyChange: Subject<{ provider: keyof ApiKeys; value: string }>;
+  apiKeys$: BehaviorSubject<ApiKeys>;
 }
 
-export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProps): TemplateResult {
+export function connectionsView({ apiKeys$ }: ConnectionsViewProps): TemplateResult {
+  // Internal key change and persistence
+  const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
+
+  const persistKeys$ = apiKeyChange$.pipe(
+    debounceTime(300),
+    distinctUntilChanged((a, b) => a.provider === b.provider && a.value === b.value),
+    tap(({ provider, value }) => {
+      const currentKeys = apiKeys$.value;
+      const updatedKeys = { ...currentKeys, [provider]: value };
+      apiKeys$.next(updatedKeys);
+      saveApiKeys(updatedKeys);
+    }),
+  );
+
   // Internal test streams
   const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
   const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
@@ -26,7 +39,7 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
     mergeMap(({ provider }) =>
       testConnection({
         provider,
-        apiKeys,
+        apiKeys: apiKeys$.value,
       }).pipe(
         tap((result) => {
           const currentResults = testResults$.value;
@@ -49,12 +62,13 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
     ),
   );
 
-  // Subscribe to handle test connections
+  // Subscribe to internal streams
+  persistKeys$.subscribe();
   handleTestConnection$.subscribe();
 
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
-    map((loading) => loading.openai || loading.together || (!apiKeys.openai && !apiKeys.together)),
+    map((loading) => loading.openai || loading.together || (!apiKeys$.value.openai && !apiKeys$.value.together)),
   );
   const buttonText$ = testLoading$.pipe(
     map((loading) => (loading.openai || loading.together ? "Testing..." : "Test Connections")),
@@ -66,8 +80,8 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
         mergeMap((results) =>
           testErrors$.pipe(
             map((errors) => {
-              if (!apiKeys.openai) return "✗ Not set";
-              if (loading.openai) return "? Testing...";
+              if (!apiKeys$.value.openai) return "✗ Not set";
+              if (loading.openai) return `Testing...`;
               if (errors.openai) return `✗ ${errors.openai}`;
               if (results.openai) return `✓ ${results.openai}`;
               return "✓ Set";
@@ -84,8 +98,8 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
         mergeMap((results) =>
           testErrors$.pipe(
             map((errors) => {
-              if (!apiKeys.together) return html`✗ Not set`;
-              if (loading.together) return html`? Testing...`;
+              if (!apiKeys$.value.together) return html`✗ Not set`;
+              if (loading.together) return html`Testing...`;
               if (errors.together) return html`✗ ${errors.together}`;
               if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
               return html`✓ Set`;
@@ -105,13 +119,13 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
 
   const handleOpenAIChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
-    onApiKeyChange.next({ provider: "openai", value: input.value });
+    apiKeyChange$.next({ provider: "openai", value: input.value });
     clearTestResults("openai");
   };
 
   const handleTogetherChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
-    onApiKeyChange.next({ provider: "together", value: input.value });
+    apiKeyChange$.next({ provider: "together", value: input.value });
     clearTestResults("together");
   };
 
@@ -119,11 +133,11 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
     e.preventDefault();
 
     // Test OpenAI first
-    if (apiKeys.openai) {
+    if (apiKeys$.value.openai) {
       testConnection$.next({ provider: "openai" });
     }
     // Then test Together.ai
-    if (apiKeys.together) {
+    if (apiKeys$.value.together) {
       testConnection$.next({ provider: "together" });
     }
   };
@@ -135,7 +149,7 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
         <input
           id="openai-key"
           type="password"
-          value=${apiKeys.openai || ""}
+          value=${apiKeys$.value.openai || ""}
           placeholder="sk-..."
           @input=${handleOpenAIChange}
         />
@@ -146,7 +160,7 @@ export function connectionsView({ apiKeys, onApiKeyChange }: ConnectionsViewProp
         <input
           id="together-key"
           type="password"
-          value=${apiKeys.together || ""}
+          value=${apiKeys$.value.together || ""}
           placeholder="API key for Together.ai"
           @input=${handleTogetherChange}
         />

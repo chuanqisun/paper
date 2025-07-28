@@ -1,7 +1,7 @@
 import { render } from "lit-html";
-import { BehaviorSubject, merge, Subject } from "rxjs";
-import { debounceTime, distinctUntilChanged, tap } from "rxjs/operators";
-import { loadApiKeys, saveApiKeys, type ApiKeys } from "./lib/storage";
+import { BehaviorSubject } from "rxjs";
+import { tap } from "rxjs/operators";
+import { loadApiKeys, type ApiKeys } from "./lib/storage";
 import "./main.css";
 import { connectionsView } from "./views/connections";
 import "./views/connections.css";
@@ -11,29 +11,13 @@ const connectionsContent = document.querySelector(".connections-content") as HTM
 
 // 2. Declare streams
 const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
-const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
-
-const persistKeys$ = apiKeyChange$.pipe(
-  debounceTime(300),
-  distinctUntilChanged((a, b) => a.provider === b.provider && a.value === b.value),
-  tap(({ provider, value }) => {
-    const currentKeys = apiKeys$.value;
-    const updatedKeys = { ...currentKeys, [provider]: value };
-    apiKeys$.next(updatedKeys);
-    saveApiKeys(updatedKeys);
-  }),
-);
 
 const renderConnections$ = apiKeys$.pipe(
   tap(() => {
-    const connectionsTemplate = connectionsView({
-      apiKeys: apiKeys$.value,
-      onApiKeyChange: apiKeyChange$,
-    });
-
+    const connectionsTemplate = connectionsView({ apiKeys$ });
     render(connectionsTemplate, connectionsContent);
   }),
 );
 
 // 3. Start
-merge(persistKeys$, renderConnections$).subscribe();
+renderConnections$.subscribe();
