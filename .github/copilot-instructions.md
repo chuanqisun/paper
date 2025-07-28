@@ -13,7 +13,7 @@ applyTo: "**"
 
 ## Workflow
 
-- User is responsible for `npm run dev`. You don't need to worry about any npm scripts.
+- Do NOT run `npm run dev` for user.
 - If user provided new information or changed requirements, you must update .github/copilot-instructions.md and .github/instructions/\*.instructions.md to stay up to date.
 
 ## Coding style

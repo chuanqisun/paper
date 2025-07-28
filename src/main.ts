@@ -1,6 +1,7 @@
 import { render } from "lit-html";
-import { BehaviorSubject, merge, Subject } from "rxjs";
-import { debounceTime, distinctUntilChanged, tap } from "rxjs/operators";
+import { BehaviorSubject, merge, of, Subject } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from "rxjs/operators";
+import { testConnection } from "./lib/openai";
 import { loadApiKeys, saveApiKeys, type ApiKeys } from "./lib/storage";
 import "./main.css";
 import { connectionsView } from "./views/connections";
@@ -12,6 +13,9 @@ const connectionsContent = document.querySelector(".connections-content") as HTM
 // 2. Declare streams
 const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
 const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
+const testConnection$ = new Subject<{ provider: "openai" | "blackforest"; testInput: string }>();
+const testResult$ = new BehaviorSubject<string | undefined>(undefined);
+const testLoading$ = new BehaviorSubject<boolean>(false);
 
 const persistKeys$ = apiKeyChange$.pipe(
   debounceTime(300),
@@ -24,11 +28,38 @@ const persistKeys$ = apiKeyChange$.pipe(
   }),
 );
 
-const renderConnections$ = apiKeys$.pipe(
-  tap((apiKeys) => {
+const handleTestConnection$ = testConnection$.pipe(
+  tap(() => {
+    testLoading$.next(true);
+    testResult$.next(undefined);
+  }),
+  switchMap(({ provider, testInput }) =>
+    testConnection({
+      provider,
+      testInput,
+      apiKeys: apiKeys$.value,
+    }).pipe(
+      tap((result) => {
+        testResult$.next(result);
+        testLoading$.next(false);
+      }),
+      catchError((error) => {
+        testResult$.next(`Error: ${error.message}`);
+        testLoading$.next(false);
+        return of(null);
+      }),
+    ),
+  ),
+);
+
+const renderConnections$ = merge(apiKeys$, testResult$, testLoading$).pipe(
+  tap(() => {
     const connectionsTemplate = connectionsView({
-      apiKeys,
+      apiKeys: apiKeys$.value,
       onApiKeyChange: apiKeyChange$,
+      onTestConnection: testConnection$,
+      testResult: testResult$.value,
+      testLoading: testLoading$.value,
     });
 
     render(connectionsTemplate, connectionsContent);
@@ -36,4 +67,4 @@ const renderConnections$ = apiKeys$.pipe(
 );
 
 // 3. Start
-merge(persistKeys$, renderConnections$).subscribe();
+merge(persistKeys$, handleTestConnection$, renderConnections$).subscribe();

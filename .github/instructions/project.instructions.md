@@ -138,6 +138,8 @@ OUTPUT (200)
 }
 ```
 
+Status options: Task not found, Pending, Request Moderated, Content Moderated, Ready, Error
+
 OUTPUT (422)
 
 ```json
