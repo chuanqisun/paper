@@ -2,14 +2,18 @@ import { html, type TemplateResult } from "lit-html";
 import { BehaviorSubject, Subject, map, of } from "rxjs";
 import { catchError, debounceTime, distinctUntilChanged, mergeMap, tap } from "rxjs/operators";
 import { observe } from "../lib/observe-directive";
-import { saveApiKeys, type ApiKeys } from "../lib/storage";
+import { loadApiKeys, saveApiKeys, type ApiKeys } from "../lib/storage";
 import { testConnection } from "../lib/test-connections";
 
-export interface ConnectionsViewProps {
+export interface ConnectionsViewResult {
+  connectionsTemplate: TemplateResult;
   apiKeys$: BehaviorSubject<ApiKeys>;
 }
 
-export function connectionsView({ apiKeys$ }: ConnectionsViewProps): TemplateResult {
+export function connectionsView(): ConnectionsViewResult {
+  // Initialize apiKeys observable internally
+  const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
+
   // Internal key change and persistence
   const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
 
@@ -142,7 +146,7 @@ export function connectionsView({ apiKeys$ }: ConnectionsViewProps): TemplateRes
     }
   };
 
-  return html`
+  const connectionsTemplate = html`
     <form class="connections-form" @submit=${handleTestSubmit}>
       <div class="form-field">
         <label for="openai-key">OpenAI API Key</label>
@@ -173,4 +177,6 @@ export function connectionsView({ apiKeys$ }: ConnectionsViewProps): TemplateRes
       </div>
     </form>
   `;
+
+  return { connectionsTemplate, apiKeys$ };
 }

@@ -5,6 +5,7 @@ applyTo: "**"
 ## Coding paradigm
 
 - TypeScript. Infer type as much, annotate when necessary
+- When import types, prefix them with `type` keyboard. We have `verbatimModuleSyntax` enabled
 - Functional core with RxJS
 - Effectives are handled on the top layer in main.ts
 - Functions over classes, but use class when internal state is complex
@@ -27,6 +28,8 @@ applyTo: "**"
 
 - Use latest CSS features, including variables, grid, flexbox
 - Nesting is ok
+- Component specific styles should be in the {component-name}.css file, next to {component-name}.ts
+- Global styles are in /src/main.css
 
 ## File organization
 
@@ -49,11 +52,6 @@ applyTo: "**"
 - Create all the observables but do NOT subscribe.
 - In the end, merge all the observables and subscribe once.
 
-## RxJS pattern in views
-
-- You should hide component's internal state within the viewe function
-- Use the `/src/lib/observe-directive.ts` to render observable inside the lit template, e.g. `<span>${observe(stream$)}</span>`
-
 ## lib/\*.ts
 
 - They should generally be observables, operators, or pure functions
@@ -61,7 +59,11 @@ applyTo: "**"
 ## views/\*.ts
 
 - They should be pure functions that take data and return lit-html templates
-- They can take observables as a way communicate to the outside
+  - Input: any observables it depends on
+  - Output: lit-html template, and observables if it created new ones for other components to consume
 - When approperiate, use native DOM events
-- Component specific styles should be in the {component-name}.css file, next to {component-name}.ts
-- Global styles are in /src/main.css
+
+## RxJS pattern in views
+
+- You should hide component's internal state within the viewe function
+- Use the `/src/lib/observe-directive.ts` to render observable inside the lit template, e.g. `<span>${observe(stream$)}</span>`

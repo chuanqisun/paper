@@ -11,7 +11,7 @@ applyTo: "**"
 - Use ch units for spacing
 - Use system default styles as much as possible, override when necessary
 - We have 0 margin/padding reset.
-- Margin/gap should be set by the parent, Padding should be set by the child
+- Margin/gap should be set by the parent, Padding should be avoided, except for elements with borders
 - Write modular reusable classes, separate layout from component styles
 
 ## Layout
