@@ -1,0 +1,26 @@
+.connections-form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-unit) * 2);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-unit);
+}
+
+.form-field label {
+  color: var(--color-text);
+  font-weight: bold;
+}
+
+.form-status {
+  padding: var(--spacing-unit);
+  background: #f9f9f9;
+  border-radius: 2px;
+}
+
+.form-status small {
+  color: var(--color-text-secondary);
+}

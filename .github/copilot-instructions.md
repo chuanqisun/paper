@@ -4,11 +4,17 @@ applyTo: "**"
 
 ## Coding paradigm
 
+- TypeScript. Infer type as much, annotate when necessary
 - Functional core with RxJS
 - Effectives are handled on the top layer in main.ts
 - Functions over classes, but use class when internal state is complex
 - Pure functions are in /src/lib/\*.ts
 - Views are templated with lit-html, stored in /src/views/\*.ts
+
+## Workflow
+
+- User is responsible for `npm run dev`. You don't need to worry about any npm scripts.
+- If user provided new information or changed requirements, you must update .github/copilot-instructions.md and .github/instructions/\*.instructions.md to stay up to date.
 
 ## Coding style
 
@@ -35,6 +41,13 @@ applyTo: "**"
 - Create observable streams and manipulate them in the middle
 - Subscribe to all the streams at the end
 
+## RxJS patterns in main.ts
+
+- Use `tap` operator for side effects, keep `subscribe()` callbacks empty
+- All side effects should be handled in the pipeline before the final subscription
+- Create all the observables but do NOT subscribe.
+- In the end, merge all the observables and subscribe once.
+
 ## lib/\*.ts
 
 - They should generally be observables, operators, or pure functions
@@ -44,3 +57,5 @@ applyTo: "**"
 - They should be pure functions that take data and return lit-html templates
 - They can take observables as a way communicate to the outside
 - When approperiate, use native DOM events
+- Component specific styles should be in the {component-name}.css file, next to {component-name}.ts
+- Global styles are in /src/main.css

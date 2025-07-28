@@ -1,0 +1,151 @@
+:root {
+  font-family: monospace;
+  font-size: 14px;
+  --color-text: #222;
+  --color-text-secondary: #666;
+  --color-text-active: #000;
+  --spacing-unit: 1ch;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  color: var(--color-text);
+  background: white;
+  line-height: 1.4;
+}
+
+/* Layout */
+#app {
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: var(--spacing-unit);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-unit) * 4);
+}
+
+/* Typography */
+h1 {
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+h2 {
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+p {
+  color: var(--color-text-secondary);
+}
+
+/* Header */
+.header {
+  padding: calc(var(--spacing-unit) * 2);
+  gap: var(--spacing-unit);
+  display: flex;
+  flex-direction: column;
+}
+
+.header details {
+  margin-top: calc(var(--spacing-unit) * 2);
+}
+
+.header summary {
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: bold;
+}
+
+.header summary:hover {
+  color: var(--color-text-active);
+}
+
+.connections-content {
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-unit) * 2);
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-unit);
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+.section-content {
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+/* Form elements */
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  min-height: 2lh;
+  resize: none;
+  field-sizing: content;
+  width: 100%;
+  padding: var(--spacing-unit);
+  border: 1px solid #ccc;
+}
+
+textarea:focus {
+  outline: 2px solid var(--color-text-active);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
+  border: 1px solid #ccc;
+  background: white;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f5f5f5;
+}
+
+button:active {
+  background: #eee;
+  color: var(--color-text-active);
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  padding: var(--spacing-unit);
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+input:focus {
+  outline: 2px solid var(--color-text-active);
+  outline-offset: 1px;
+  border-color: transparent;
+}
