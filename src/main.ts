@@ -1,16 +1,15 @@
 import { render } from "lit-html";
 import { BehaviorSubject, merge, Subject } from "rxjs";
 import { debounceTime, distinctUntilChanged, tap } from "rxjs/operators";
+import { loadApiKeys, saveApiKeys, type ApiKeys } from "./lib/storage";
 import "./main.css";
+import { connectionsView } from "./views/connections";
 import "./views/connections.css";
 
-import { loadApiKeys, saveApiKeys, type ApiKeys } from "./lib/storage";
-import { connectionsView } from "./views/connections";
-
-// DOM references
+// 1. DOM references
 const connectionsContent = document.querySelector(".connections-content") as HTMLElement;
 
-// State streams
+// 2. Declare streams
 const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
 const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
 
@@ -36,4 +35,5 @@ const renderConnections$ = apiKeys$.pipe(
   }),
 );
 
+// 3. Start
 merge(persistKeys$, renderConnections$).subscribe();
