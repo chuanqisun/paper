@@ -6,10 +6,10 @@ import "./main.css";
 import { connectionsView } from "./views/connections";
 import "./views/connections.css";
 
-// 1. DOM references
+// 1. Global DOM references
 const connectionsContent = document.querySelector(".connections-content") as HTMLElement;
 
-// 2. Declare streams
+// 2. Global streams declarations
 const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
 
 const renderConnections$ = apiKeys$.pipe(
