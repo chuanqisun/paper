@@ -45,7 +45,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
         map(([apiKeys, concepts]) => ({
           parti,
           apiKey: apiKeys.openai,
-          concepts: concepts.filter((c) => c.favorite).map((c) => ({ name: c.concept, description: c.description })),
+          concepts: concepts.map((c) => ({ name: c.concept, description: c.description })),
         })),
         switchMap(({ parti, apiKey, concepts }) => {
           if (!apiKey) {
@@ -120,7 +120,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   // Template
   const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$]).pipe(
     map(
-      ([artifacts, rejectedArtifacts, isGenerating, concepts]) => html`
+      ([artifacts, rejectedArtifacts, isGenerating]) => html`
         <div class="materialize">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
           <div class="materialize-actions">
@@ -131,17 +131,11 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
                   generateArtifacts$.next({ parti });
                 }
               }}
-              ?disabled=${concepts.filter((c) => c.favorite).length === 0}
             >
               Generate Artifacts
             </button>
           </div>
 
-          ${concepts.filter((c) => c.favorite).length === 0
-            ? html`<div class="materialize-placeholder">
-                Please accept some concepts first before generating artifacts.
-              </div>`
-            : ""}
           ${isGenerating ? html`<div class="loading">Generating artifacts...</div>` : ""}
           ${artifacts.length > 0
             ? html`

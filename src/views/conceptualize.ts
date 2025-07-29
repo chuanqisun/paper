@@ -226,7 +226,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                     ></textarea>
                     <div class="concept-actions">
                       <button @click=${() => favoriteConcept$.next(concept.id)}>
-                        ${concept.favorite ? "✅ Accepted" : "Accept"}
+                        ${concept.favorite ? "✅ Pinned" : "Pin"}
                       </button>
                       ${concept.favorite
                         ? null
