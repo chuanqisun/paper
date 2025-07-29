@@ -21,7 +21,7 @@
 }
 
 .conceptual-actions button {
-  padding: 0.5ch 1ch;
+  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
   border: 1px solid #ccc;
   background: white;
   cursor: pointer;
@@ -45,7 +45,6 @@
 .concept-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5ch;
   padding: 1ch;
   border: 1px solid #eee;
 }
@@ -59,16 +58,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1ch;
 }
 
 .concept-title {
   font-weight: bold;
   min-width: 0;
   flex: 1;
-}
-
-.concept-title input {
-  font-weight: bold;
   font-family: inherit;
   font-size: inherit;
   border: none;
@@ -78,16 +74,14 @@
 
 .concept-actions {
   display: flex;
-  gap: 0.5ch;
   flex-shrink: 0;
 }
 
 .concept-actions button {
-  padding: 0.25ch 0.5ch;
+  padding: 1.5ch 1ch;
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 12px;
 }
 
 .concept-actions button:hover {
@@ -96,23 +90,13 @@
 
 .concept-description {
   color: #666;
-  line-height: 1.4;
-}
-
-.concept-description textarea {
   width: 100%;
   border: none;
   background: transparent;
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
   resize: none;
   field-sizing: content;
-  min-height: 1.4em;
-}
-
-.concept-description textarea:focus {
-  outline: 1px solid #ccc;
 }
 
 .manual-add {
@@ -123,7 +107,6 @@
   gap: 0.5ch;
 }
 
-.manual-add input,
 .manual-add textarea {
   border: 1px solid #ccc;
   padding: 0.5ch;
@@ -166,7 +149,6 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
 }
 
 .rejected-item button:hover {

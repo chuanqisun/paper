@@ -153,7 +153,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                 id: Math.random().toString(36).substr(2, 9),
                 concept,
                 description,
-                favorite: false,
+                favorite: true,
               };
               concepts$.next([...concepts$.value, newConcept]);
               newConceptTitle$.next("");
@@ -201,46 +201,49 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
               (concept) => html`
                 <div class="concept-item ${concept.favorite ? "favorite" : ""}">
                   <div class="concept-header">
-                    <div class="concept-title">
-                      <input
-                        .value=${concept.concept}
-                        @input=${(e: Event) =>
-                          editConcept$.next({
-                            id: concept.id,
-                            field: "concept",
-                            value: (e.target as HTMLInputElement).value,
-                          })}
-                      />
-                    </div>
-                    <div class="concept-actions">
-                      <button @click=${() => favoriteConcept$.next(concept.id)}>${concept.favorite ? "★" : "☆"}</button>
-                      <button @click=${() => rejectConcept$.next(concept.id)}>✕</button>
-                    </div>
-                  </div>
-                  <div class="concept-description">
                     <textarea
-                      .value=${concept.description}
+                      class="concept-title"
+                      rows="1"
+                      .value=${concept.concept}
                       @input=${(e: Event) =>
                         editConcept$.next({
                           id: concept.id,
-                          field: "description",
+                          field: "concept",
                           value: (e.target as HTMLTextAreaElement).value,
                         })}
                     ></textarea>
+                    <div class="concept-actions">
+                      <button @click=${() => favoriteConcept$.next(concept.id)}>
+                        ${concept.favorite ? "✅ Accepted" : "Accept"}
+                      </button>
+                      ${concept.favorite
+                        ? null
+                        : html`<button @click=${() => rejectConcept$.next(concept.id)}>Reject</button>`}
+                    </div>
                   </div>
+                  <textarea
+                    class="concept-description"
+                    .value=${concept.description}
+                    @input=${(e: Event) =>
+                      editConcept$.next({
+                        id: concept.id,
+                        field: "description",
+                        value: (e.target as HTMLTextAreaElement).value,
+                      })}
+                  ></textarea>
                 </div>
               `,
             )}
           </div>
 
           <div class="manual-add">
-            <input
-              type="text"
+            <textarea
+              rows="1"
               placeholder="New concept..."
               .value=${newTitle}
-              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLInputElement).value)}
+              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
               ?disabled=${isGeneratingDescription}
-            />
+            ></textarea>
             <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
               ${isGeneratingDescription ? "Generating..." : "Add Concept"}
             </button>
