@@ -14,6 +14,11 @@ applyTo: "**"
 - Margin/gap should be set by the parent, Padding should be avoided, except for elements with borders
 - Write modular reusable classes, separate layout from component styles
 
+## CSS
+
+- Use CSS variables for any globally used colors
+- Try use existing variables in `main.css`, if nothing suitable, introduce new variables in `main.css`
+
 ## Layout
 
 - Single column minimal layout. Clamp max-width to 90rem
