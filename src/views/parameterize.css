@@ -21,17 +21,6 @@
   margin-bottom: 2ch;
 }
 
-.domain-input label {
-  font-weight: bold;
-}
-
-.domain-input input {
-  padding: 1ch;
-  border: 1px solid #ccc;
-  font-family: inherit;
-  font-size: inherit;
-}
-
 .parameterize-actions {
   display: flex;
   gap: 1ch;
