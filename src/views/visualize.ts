@@ -132,7 +132,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
   );
 
   // Template
-  const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$, editingArtifacts$]).pipe(
+  const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, editingArtifacts$]).pipe(
     map(
       ([artifacts, rejectedArtifacts, isGenerating, editingArtifacts]) => html`
         <div class="visualize">
