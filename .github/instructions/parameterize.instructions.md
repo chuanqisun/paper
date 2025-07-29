@@ -11,8 +11,7 @@ Use the Parti, concepts, and visual artifacts from previous steps to generate pr
 ## How
 
 Input: Parti (string), list of concepts ({name: string, description: string}[]), list of artifacts ({name: string, description: string}[]), domain (string), existing parameter sets (ParameterSet[])
-Intermediate output: list of parameter sets ({name: string, description: string, parameters: Record<string, string>}[])
-Final output: structured parameter sets ready for rendering
+Output: list of parameter sets ({name: string, description: string, parameters: Record<string, string>}[])
 
 Parameter set name is for human to quickly identify the design direction. It should be very short, one word, or a short phrase only.
 
@@ -28,7 +27,7 @@ Parameter generation is single thread but we will receive incremental outputs (a
 
 ## User control
 
-A text input for specifying the product domain (e.g., "packaging", "clothing", "personal electronics")
+A required text input for specifying the product domain (e.g., "packaging", "clothing", "personal electronics")
 A button to Generate Parameters
 For each parameter set, user can see the name, description, and all parameter key-value pairs
 For each parameter set, user can Accept or Reject it, similar to the concept and artifact generation workflow
