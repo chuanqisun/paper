@@ -29,14 +29,7 @@
 }
 
 .parameterize-actions textarea {
-  padding: var(--spacing-unit);
-  border: 1px solid #ccc;
-  font-family: inherit;
-  font-size: inherit;
-  min-width: 20ch;
   flex: 1;
-  resize: none;
-  field-sizing: content;
 }
 
 .parameters-list {
