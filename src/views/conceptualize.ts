@@ -40,23 +40,11 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
   const revertRejection$ = new Subject<string>();
   const clearAllRejected$ = new Subject<void>();
   const addManualConcept$ = new Subject<void>();
+  const pinnedOnly$ = new Subject<void>();
 
   // Generate concepts effect
   const generateEffect$ = generateConcepts$.pipe(
-    tap(() => {
-      isGenerating$.next(true);
-
-      // Move unfavorited concepts to rejected list
-      const currentConcepts = concepts$.value;
-      const maybeConcepts = currentConcepts.filter((c) => !c.pinned);
-      const pinnedConcepts = currentConcepts.filter((c) => c.pinned);
-
-      if (maybeConcepts.length > 0) {
-        const newRejectedConcepts = maybeConcepts.map((c) => c.concept);
-        rejectedConcepts$.next([...rejectedConcepts$.value, ...newRejectedConcepts]);
-        concepts$.next(pinnedConcepts);
-      }
-    }),
+    tap(() => isGenerating$.next(true)),
     switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([parti$, apiKeys$]).pipe(
@@ -188,6 +176,22 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     ),
   );
 
+  // Pinned only effect
+  const pinnedOnlyEffect$ = pinnedOnly$.pipe(
+    tap(() => {
+      const currentConcepts = concepts$.value;
+      const unpinnedConcepts = currentConcepts.filter((c) => !c.pinned);
+      const pinnedConcepts = currentConcepts.filter((c) => c.pinned);
+
+      // Add unpinned concepts to rejection list
+      const newRejectedConcepts = [...rejectedConcepts$.value, ...unpinnedConcepts.map((c) => c.concept)];
+      rejectedConcepts$.next(newRejectedConcepts);
+
+      // Keep only pinned concepts
+      concepts$.next(pinnedConcepts);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([
     concepts$,
@@ -200,27 +204,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
       ([concepts, rejectedConcepts, isGenerating, newTitle, isGeneratingDescription]) => html`
         <div class="conceptualize">
           <p>Explore related concepts that capture the essence of your Parti</p>
-          <div class="conceptual-actions">
-            <button
-              @click=${() => {
-                generateConcepts$.next();
-              }}
-            >
-              Generate Concepts
-            </button>
-            <textarea
-              rows="1"
-              placeholder="New concept..."
-              .value=${newTitle}
-              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
-              ?disabled=${isGeneratingDescription}
-            ></textarea>
-            <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
-              ${isGeneratingDescription ? "Generating..." : "Add Concept"}
-            </button>
-          </div>
-
-          ${isGenerating ? html`<div class="loading">Generating concepts...</div>` : ""}
 
           <div class="concepts-list">
             ${concepts.map(
@@ -262,6 +245,27 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
             )}
           </div>
 
+          <menu>
+            <button
+              @click=${() => {
+                generateConcepts$.next();
+              }}
+            >
+              ${isGenerating ? "Generating..." : "Generate Concepts"}
+            </button>
+            <button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>
+            <textarea
+              rows="1"
+              placeholder="New concept..."
+              .value=${newTitle}
+              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
+              ?disabled=${isGeneratingDescription}
+            ></textarea>
+            <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
+              ${isGeneratingDescription ? "Generating..." : "Add Concept"}
+            </button>
+          </menu>
+
           ${rejectedConcepts.length > 0
             ? html`
                 <div class="rejected-concepts">
@@ -299,6 +303,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     revertEffect$,
     clearAllRejectedEffect$,
     addManualEffect$,
+    pinnedOnlyEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;

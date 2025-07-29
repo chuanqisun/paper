@@ -13,20 +13,6 @@
     padding-left: 2ch;
   }
 
-  .conceptual-actions {
-    display: flex;
-    gap: 1ch;
-    flex-wrap: wrap;
-  }
-
-  .conceptual-actions textarea {
-    flex: 1;
-    padding: var(--spacing-unit);
-    border: 1px solid #ccc;
-    resize: none;
-    field-sizing: content;
-  }
-
   .concepts-list {
     display: flex;
     flex-direction: column;

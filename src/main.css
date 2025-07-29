@@ -61,6 +61,19 @@ label {
   color: var(--color-text-secondary);
 }
 
+menu {
+  display: flex;
+  gap: 1ch;
+  flex-wrap: wrap;
+
+  textarea {
+    flex: 1;
+    min-width: 20ch;
+    resize: none;
+    field-sizing: content;
+  }
+}
+
 /* Header */
 .header {
   gap: var(--spacing-unit);
