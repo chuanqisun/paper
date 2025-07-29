@@ -37,7 +37,6 @@
 }
 
 .conceptual-actions textarea {
-  min-width: 20ch;
   flex: 1;
   padding: var(--spacing-unit);
   border: 1px solid #ccc;
@@ -118,9 +117,6 @@
 
 .manual-add textarea {
   border: 1px solid #ccc;
-  padding: 0.5ch;
-  font-family: inherit;
-  font-size: inherit;
 }
 
 .manual-add textarea {

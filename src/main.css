@@ -104,8 +104,6 @@ textarea {
 
 textarea:focus {
   outline: 2px solid var(--color-text-active);
-  outline-offset: 1px;
-  border-color: transparent;
 }
 
 button {
@@ -137,6 +135,4 @@ input {
 
 input:focus {
   outline: 2px solid var(--color-text-active);
-  outline-offset: 1px;
-  border-color: transparent;
 }
