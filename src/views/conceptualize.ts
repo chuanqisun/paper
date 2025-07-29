@@ -38,6 +38,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
   const favoriteConcept$ = new Subject<string>();
   const rejectConcept$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
+  const clearAllRejected$ = new Subject<void>();
   const addManualConcept$ = new Subject<void>();
 
   // Generate concepts effect
@@ -138,6 +139,13 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     tap((rejectedConcept) => {
       const rejected = rejectedConcepts$.value.filter((c) => c !== rejectedConcept);
       rejectedConcepts$.next(rejected);
+    }),
+  );
+
+  // Clear all rejected effect
+  const clearAllRejectedEffect$ = clearAllRejected$.pipe(
+    tap(() => {
+      rejectedConcepts$.next([]);
     }),
   );
 
@@ -260,6 +268,9 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
                   <details>
                     <summary>Rejected concepts (${rejectedConcepts.length})</summary>
                     <div class="rejected-list">
+                      <div class="rejected-list-header">
+                        <button class="small" @click=${() => clearAllRejected$.next()}>Clear all</button>
+                      </div>
                       ${rejectedConcepts.map(
                         (concept) => html`
                           <div class="rejected-item">
@@ -286,6 +297,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     favoriteEffect$,
     rejectEffect$,
     revertEffect$,
+    clearAllRejectedEffect$,
     addManualEffect$,
   );
 

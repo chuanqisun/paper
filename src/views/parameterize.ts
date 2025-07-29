@@ -45,6 +45,7 @@ export function parameterizeView(
   const pinParameter$ = new Subject<string>();
   const rejectParameter$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
+  const clearAllRejected$ = new Subject<void>();
   const updateDomain$ = new Subject<string>();
   const addManualParameter$ = new Subject<void>();
 
@@ -170,6 +171,13 @@ export function parameterizeView(
     tap((rejectedParameter) => {
       const rejected = rejectedParameters$.value.filter((p) => p !== rejectedParameter);
       rejectedParameters$.next(rejected);
+    }),
+  );
+
+  // Clear all rejected effect
+  const clearAllRejectedEffect$ = clearAllRejected$.pipe(
+    tap(() => {
+      rejectedParameters$.next([]);
     }),
   );
 
@@ -323,6 +331,9 @@ export function parameterizeView(
                   <details>
                     <summary>Rejected parameters (${rejectedParameters.length})</summary>
                     <div class="rejected-list">
+                      <div class="rejected-list-header">
+                        <button class="small" @click=${() => clearAllRejected$.next()}>Clear all</button>
+                      </div>
                       ${rejectedParameters.map(
                         (parameter) => html`
                           <div class="rejected-item">
@@ -348,6 +359,7 @@ export function parameterizeView(
     pinEffect$,
     rejectEffect$,
     revertEffect$,
+    clearAllRejectedEffect$,
     updateDomainEffect$,
     addManualEffect$,
   );

@@ -29,6 +29,7 @@ export function visualizeView(
   const acceptArtifact$ = new Subject<string>();
   const rejectArtifact$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
+  const clearAllRejected$ = new Subject<void>();
   const toggleEdit$ = new Subject<string>();
 
   // Generate artifacts effect
@@ -134,6 +135,13 @@ export function visualizeView(
     }),
   );
 
+  // Clear all rejected effect
+  const clearAllRejectedEffect$ = clearAllRejected$.pipe(
+    tap(() => {
+      rejectedArtifacts$.next([]);
+    }),
+  );
+
   // Toggle edit effect
   const toggleEditEffect$ = toggleEdit$.pipe(
     tap((id) => {
@@ -236,6 +244,9 @@ export function visualizeView(
                   <details>
                     <summary>Rejected artifacts (${rejectedArtifacts.length})</summary>
                     <div class="rejected-list">
+                      <div class="rejected-list-header">
+                        <button class="small" @click=${() => clearAllRejected$.next()}>Clear all</button>
+                      </div>
                       ${rejectedArtifacts.map(
                         (artifact) => html`
                           <div class="rejected-item">
@@ -255,7 +266,15 @@ export function visualizeView(
   );
 
   // Merge all effects
-  const effects$ = merge(generateEffect$, editEffect$, acceptEffect$, rejectEffect$, revertEffect$, toggleEditEffect$);
+  const effects$ = merge(
+    generateEffect$,
+    editEffect$,
+    acceptEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+    toggleEditEffect$,
+  );
 
   const staticTemplate = html`${observe(template$)}`;
 

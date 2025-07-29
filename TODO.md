@@ -8,6 +8,7 @@ When you are done addressing the item, you must move it from the `#TODO` list to
 - Change the pin/reject workflow. When user click Generate Concepts/Artifacts/Design, do NOT move anything to the rejection list. Instead, just append below the existing list.
   - Move the Generate and Manual add buttons to the bottom of the list
   - Add another button that says "Pinned only" and removes unpinned items
-- In the rejection list, when expanded, expose a "Clear all" button that removes items from rejection list
 
 # DONE
+
+- In all of the rejection lists, when expanded, expose a "Clear all" button that removes items from rejection list

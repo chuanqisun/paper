@@ -45,6 +45,7 @@ export function fitView(
   const pinDesign$ = new Subject<string>();
   const rejectDesign$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
+  const clearAllRejected$ = new Subject<void>();
 
   // Generate designs effect
   const generateEffect$ = generateDesigns$.pipe(
@@ -181,6 +182,13 @@ export function fitView(
     }),
   );
 
+  // Clear all rejected effect
+  const clearAllRejectedEffect$ = clearAllRejected$.pipe(
+    tap(() => {
+      rejectedDesigns$.next([]);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([designs$, rejectedDesigns$, isGenerating$]).pipe(
     map(
@@ -258,6 +266,9 @@ export function fitView(
                   <details>
                     <summary>Rejected designs (${rejectedDesigns.length})</summary>
                     <div class="rejected-list">
+                      <div class="rejected-list-header">
+                        <button class="small" @click=${() => clearAllRejected$.next()}>Clear all</button>
+                      </div>
                       ${rejectedDesigns.map(
                         (design) => html`
                           <div class="rejected-item">
@@ -277,7 +288,14 @@ export function fitView(
   );
 
   // Merge all effects
-  const effects$ = merge(generateEffect$, editEffect$, pinEffect$, rejectEffect$, revertEffect$);
+  const effects$ = merge(
+    generateEffect$,
+    editEffect$,
+    pinEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+  );
 
   const staticTemplate = html`${observe(template$)}`;
 
