@@ -71,10 +71,10 @@ ${conceptsList}
 ${artifactsList}
 \`\`\`${existingList}${rejectedList}
 
-Generate ${count} design parameters that represent specific design aspects commonly required for ${params.domain}. Each parameter should be a design consideration that needs to be addressed for this product category.
+Generate ${count} design parameters that represent specific design decisions that a designer must make for ${params.domain}. Each parameter should be a decision that is usually associated with a list of possible choices.
 
-Parameter name should be concise and clear (e.g., "Material", "Location", "Functionality").
-Parameter description should explain what this design aspect encompasses and why it's relevant to ${params.domain}, without suggesting specific values to avoid bias.
+Parameter name should be concise and clear, representing a specific design decision (e.g., "Material" for clothing, "Location" for art installation).
+Parameter description should be a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.
 
 Respond in this JSON format:
 {
@@ -123,7 +123,7 @@ export function regenerateParameterDescription$(params: {
       try {
         const prompt = `Generate a description for the design parameter "${params.parameterName}" in the context of ${params.domain}.
 
-The description should explain what this design aspect encompasses and why it's relevant to ${params.domain}, without suggesting specific values to avoid bias in the design process.`;
+The description should be a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.`;
 
         const response = await openai.responses.create({
           model: "gpt-4.1",

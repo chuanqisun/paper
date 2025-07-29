@@ -13,13 +13,13 @@ Use the Parti, concepts, and visual artifacts from previous steps to generate a 
 Input: Parti (string), list of concepts ({name: string, description: string}[]), list of artifacts ({name: string, description: string}[]), domain (string), existing parameters (Parameter[])
 Output: list of parameters ({name: string, description: string}[])
 
-Parameter name should be concise and clear, representing a specific design aspect (e.g., "Material" would be a parameter for clothing, and "Location" would be a parameter for art installation).
+Parameter name should be concise and clear, representing a specific design decision that a designer must make. It is usually associated with a list of possible choices (e.g., "Material" would be a parameter for clothing, and "Location" would be a parameter for art installation).
 
-Parameter description explains what this design aspect encompasses and why it's relevant to the product domain. Descriptions should be neutral and avoid specific examples or values to prevent introducing bias into the design process.
+Parameter description is a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.
 
-Parameter generation uses a similar process to concept and artifact generation, with a system prompt that instructs the LLM to identify domain-specific design aspects commonly required for that product category. The AI suggests parameter categories based on the Parti and previous artifacts, but does not assign specific values.
+Parameter generation uses a similar process to concept and artifact generation, with a system prompt that instructs the LLM to identify domain-specific design decisions commonly required for that product category. The AI suggests parameter categories based on the Parti and previous artifacts, but does not assign specific values.
 
-We generate 3 initially, and 2 incrementally
+We generate 3 parameters initially, and 2 parameters incrementally if some parameters already exist
 
 Parameter generation is single thread but we will receive incremental outputs (as we do in concept and artifact generation).
 

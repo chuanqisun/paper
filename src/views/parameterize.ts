@@ -221,10 +221,7 @@ export function parameterizeView(
         isGeneratingDescription,
       ]) => html`
         <div class="parameterize">
-          <p>
-            Generate design parameters relevant to your product domain. These parameters represent specific design
-            aspects that need to be considered for your product category.
-          </p>
+          <p>Generate design parameters relevant to your product domain</p>
 
           <div class="domain-input">
             <label for="domain">Product Domain *</label>
