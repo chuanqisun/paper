@@ -124,6 +124,17 @@ button:active {
   color: var(--color-text-active);
 }
 
+button:disabled {
+  background: #f8f8f8;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+button.small {
+  padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+  font-size: 0.9em;
+}
+
 input {
   font-family: inherit;
   font-size: inherit;

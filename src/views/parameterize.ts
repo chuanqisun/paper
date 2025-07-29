@@ -290,10 +290,14 @@ export function parameterizeView(
                         ></textarea>
                         <div class="parameter-actions">
                           ${parameter.pinned
-                            ? html`<button @click=${() => pinParameter$.next(parameter.id)}>✅ Pinned</button>`
+                            ? html`<button class="small" @click=${() => pinParameter$.next(parameter.id)}>
+                                ✅ Pinned
+                              </button>`
                             : html`
-                                <button @click=${() => pinParameter$.next(parameter.id)}>Pin</button>
-                                <button @click=${() => rejectParameter$.next(parameter.id)}>Reject</button>
+                                <button class="small" @click=${() => pinParameter$.next(parameter.id)}>Pin</button>
+                                <button class="small" @click=${() => rejectParameter$.next(parameter.id)}>
+                                  Reject
+                                </button>
                               `}
                         </div>
                       </div>
@@ -312,7 +316,7 @@ export function parameterizeView(
                         (parameter) => html`
                           <div class="rejected-item">
                             <span>${parameter}</span>
-                            <button @click=${() => revertRejection$.next(parameter)}>Restore</button>
+                            <button class="small" @click=${() => revertRejection$.next(parameter)}>Restore</button>
                           </div>
                         `,
                       )}

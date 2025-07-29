@@ -20,22 +20,6 @@
   flex-wrap: wrap;
 }
 
-.visualize-actions button {
-  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-}
-
-.visualize-actions button:hover {
-  background: #f5f5f5;
-}
-
-.visualize-actions button:active {
-  background: black;
-  color: white;
-}
-
 .artifacts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(20ch, 1fr));
@@ -123,19 +107,6 @@
   justify-content: space-between;
 }
 
-.artifact-actions button {
-  padding: 0.5ch;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-  font-size: 0.8em;
-  flex: 1;
-}
-
-.artifact-actions button:hover {
-  background: #f0f0f0;
-}
-
 .rejected-artifacts {
   margin-top: 2ch;
 }
@@ -159,16 +130,6 @@
   padding: 0.5ch;
   background: #f8f8f8;
   color: #666;
-}
-
-.rejected-item button {
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.rejected-item button:hover {
-  background: #eee;
 }
 
 .loading {

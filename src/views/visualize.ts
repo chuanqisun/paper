@@ -194,13 +194,21 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
                           ></textarea>
                           <div class="artifact-actions">
                             ${editingArtifacts.includes(artifact.id)
-                              ? html` <button @click=${() => toggleEdit$.next(artifact.id)}>Done</button> `
+                              ? html`
+                                  <button class="small" @click=${() => toggleEdit$.next(artifact.id)}>Done</button>
+                                `
                               : artifact.pinned
-                                ? html` <button @click=${() => acceptArtifact$.next(artifact.id)}>✅ Pinned</button> `
+                                ? html`
+                                    <button class="small" @click=${() => acceptArtifact$.next(artifact.id)}>
+                                      ✅ Pinned
+                                    </button>
+                                  `
                                 : html`
-                                    <button @click=${() => acceptArtifact$.next(artifact.id)}>Pin</button>
-                                    <button @click=${() => toggleEdit$.next(artifact.id)}>Edit</button>
-                                    <button @click=${() => rejectArtifact$.next(artifact.id)}>Reject</button>
+                                    <button class="small" @click=${() => acceptArtifact$.next(artifact.id)}>Pin</button>
+                                    <button class="small" @click=${() => toggleEdit$.next(artifact.id)}>Edit</button>
+                                    <button class="small" @click=${() => rejectArtifact$.next(artifact.id)}>
+                                      Reject
+                                    </button>
                                   `}
                           </div>
                         </div>
@@ -220,7 +228,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
                         (artifact) => html`
                           <div class="rejected-item">
                             <span>${artifact}</span>
-                            <button @click=${() => revertRejection$.next(artifact)}>Restore</button>
+                            <button class="small" @click=${() => revertRejection$.next(artifact)}>Restore</button>
                           </div>
                         `,
                       )}

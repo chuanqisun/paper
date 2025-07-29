@@ -225,12 +225,12 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                         })}
                     ></textarea>
                     <div class="concept-actions">
-                      <button @click=${() => favoriteConcept$.next(concept.id)}>
+                      <button class="small" @click=${() => favoriteConcept$.next(concept.id)}>
                         ${concept.pinned ? "✅ Pinned" : "Pin"}
                       </button>
                       ${concept.pinned
                         ? null
-                        : html`<button @click=${() => rejectConcept$.next(concept.id)}>Reject</button>`}
+                        : html`<button class="small" @click=${() => rejectConcept$.next(concept.id)}>Reject</button>`}
                     </div>
                   </div>
                   <textarea
@@ -258,7 +258,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                         (concept) => html`
                           <div class="rejected-item">
                             <span>${concept}</span>
-                            <button @click=${() => revertRejection$.next(concept)}>Restore</button>
+                            <button class="small" @click=${() => revertRejection$.next(concept)}>Restore</button>
                           </div>
                         `,
                       )}
