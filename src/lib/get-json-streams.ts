@@ -87,7 +87,11 @@ Respond in this JSON format:
   });
 }
 
-export function regenerateConcept$(params: { description: string; apiKey: string }): Observable<string> {
+export function regenerateDescription$(params: {
+  concept: string;
+  apiKey: string;
+  existingConcepts?: Concept[];
+}): Observable<string> {
   return new Observable<string>((subscriber) => {
     const openai = new OpenAI({
       dangerouslyAllowBrowser: true,
@@ -96,42 +100,19 @@ export function regenerateConcept$(params: { description: string; apiKey: string
 
     (async () => {
       try {
-        const prompt = `Generate a single concept (word or short phrase) that best represents this description: "${params.description}"`;
-
         const response = await openai.responses.create({
           model: "gpt-4.1",
-          input: prompt,
-        });
+          input: [
+            { role: "developer", content: "Write a short one-sentence description for the provided concept." },
 
-        const message = response.output[0];
-        if (message?.type === "message" && "content" in message) {
-          const content = message.content?.[0];
-          if (content?.type === "output_text") {
-            subscriber.next(content.text.trim().replace(/^["']|["']$/g, ""));
-          }
-        }
-        subscriber.complete();
-      } catch (error) {
-        subscriber.error(error);
-      }
-    })();
-  });
-}
+            // Few-shot examples using existing concepts
+            ...(params.existingConcepts ?? []).flatMap((example) => [
+              { role: "user" as const, content: example.concept },
+              { role: "assistant" as const, content: example.description },
+            ]),
 
-export function regenerateDescription$(params: { concept: string; apiKey: string }): Observable<string> {
-  return new Observable<string>((subscriber) => {
-    const openai = new OpenAI({
-      dangerouslyAllowBrowser: true,
-      apiKey: params.apiKey,
-    });
-
-    (async () => {
-      try {
-        const prompt = `Write a short one-sentence description for this concept: "${params.concept}"`;
-
-        const response = await openai.responses.create({
-          model: "gpt-4.1",
-          input: prompt,
+            { role: "user", content: params.concept },
+          ],
         });
 
         const message = response.output[0];
