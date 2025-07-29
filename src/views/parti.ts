@@ -21,7 +21,7 @@ export function partiView() {
         id="parti"
         class="parti-textarea"
         placeholder="Gravity is illusion"
-        rows="2"
+        rows="1"
         .value=${observe(partiText$)}
         @input=${handleInput}
       ></textarea>

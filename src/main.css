@@ -77,10 +77,6 @@ label {
   color: var(--color-text-active);
 }
 
-.connections-content {
-  padding: var(--spacing-unit) calc(var(--spacing-unit) * 2);
-}
-
 /* Sections */
 .section {
   display: flex;
@@ -92,9 +88,6 @@ label {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-unit);
-}
-
-.section-content {
 }
 
 /* Form elements */

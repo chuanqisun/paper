@@ -1,7 +1,7 @@
 .conceptual-mapping {
   display: flex;
   flex-direction: column;
-  gap: 2ch;
+  gap: 1ch;
 }
 
 .conceptual-placeholder {

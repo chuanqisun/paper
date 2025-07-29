@@ -181,6 +181,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
     map(
       ([concepts, rejectedConcepts, isGenerating, newTitle, isGeneratingDescription]) => html`
         <div class="conceptual-mapping">
+          <p>Explore related concepts that capture the essence of your Parti</p>
           <div class="conceptual-actions">
             <button
               @click=${() => {

@@ -10,11 +10,6 @@
   gap: var(--spacing-unit);
 }
 
-.form-field label {
-  color: var(--color-text);
-  font-weight: bold;
-}
-
 .form-status {
   padding: var(--spacing-unit);
   background: #f9f9f9;
