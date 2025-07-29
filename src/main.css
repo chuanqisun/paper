@@ -39,7 +39,7 @@ body {
 .main {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--spacing-unit) * 4);
+  gap: calc(8 * var(--spacing-unit));
 }
 
 /* Typography */
@@ -81,7 +81,7 @@ label {
 .section {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--spacing-unit) * 2);
+  gap: var(--spacing-unit);
 }
 
 .section-header {
@@ -94,7 +94,6 @@ label {
 textarea {
   font-family: inherit;
   font-size: inherit;
-  min-height: 2lh;
   resize: none;
   field-sizing: content;
   width: 100%;
