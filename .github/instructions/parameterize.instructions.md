@@ -6,20 +6,18 @@ applyTo: "**/parameterize.*,**/generate-parameters.ts"
 
 ## What
 
-Use the Parti, concepts, and visual artifacts from previous steps to generate product design parameter sets for a specific domain. Each parameter set represents a cohesive collection of design decisions required for that product domain.
+Use the Parti, concepts, and visual artifacts from previous steps to generate a list of design parameters relevant to a specific product domain. Each parameter represents a design aspect that needs to be considered for that product category.
 
 ## How
 
-Input: Parti (string), list of concepts ({name: string, description: string}[]), list of artifacts ({name: string, description: string}[]), domain (string), existing parameter sets (ParameterSet[])
-Output: list of parameter sets ({name: string, description: string, parameters: Record<string, string>}[])
+Input: Parti (string), list of concepts ({name: string, description: string}[]), list of artifacts ({name: string, description: string}[]), domain (string), existing parameters (Parameter[])
+Output: list of parameters ({name: string, description: string}[])
 
-Parameter set name is for human to quickly identify the design direction. It should be very short, one word, or a short phrase only.
+Parameter name should be concise and clear, representing a specific design aspect (e.g., "Material" would be a parameter for clothing, and "Location" would be a parameter for art installation).
 
-Parameter set description is a brief summary of the overall design direction and how it relates to the Parti.
+Parameter description explains what this design aspect encompasses and why it's relevant to the product domain. Descriptions should be neutral and avoid specific examples or values to prevent introducing bias into the design process.
 
-Parameters object contains key-value pairs where keys are design aspects (e.g., "material", "color", "form_factor", "texture") and values are specific design decisions for that aspect.
-
-Parameter generation uses a similar process to concept and artifact generation, but with a system prompt that instructs the LLM to generate domain-specific design parameters commonly required for that product category. The AI should suggest both the parameter categories and the specific values based on the Parti and previous artifacts.
+Parameter generation uses a similar process to concept and artifact generation, with a system prompt that instructs the LLM to identify domain-specific design aspects commonly required for that product category. The AI suggests parameter categories based on the Parti and previous artifacts, but does not assign specific values.
 
 We generate 3 initially, and 2 incrementally
 
@@ -29,15 +27,14 @@ Parameter generation is single thread but we will receive incremental outputs (a
 
 A required text input for specifying the product domain (e.g., "packaging", "clothing", "personal electronics")
 A button to Generate Parameters
-For each parameter set, user can see the name, description, and all parameter key-value pairs
-For each parameter set, user can Accept or Reject it, similar to the concept and artifact generation workflow
+For each parameter, user can see the name and description
+For each parameter, user can Pin, Unpin, or Reject it, similar to the concept and artifact generation workflow
 
 ## UI
 
-Display parameter sets as cards in a list. Each card shows:
+Display parameters as cards in a list. Each card shows:
 
-- Parameter set name as a heading
+- Parameter name as a heading
 - Description as body text
-- Parameter key-value pairs displayed as a definition list or table
 
-Rejected parameter sets only show the name with a restore button.
+Rejected parameters only show the name with a restore button.

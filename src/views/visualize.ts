@@ -6,9 +6,9 @@ import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
 import "./visualize.css";
 
-interface ArtifactWithId extends Artifact {
+export interface ArtifactWithId extends Artifact {
   id: string;
-  accepted: boolean;
+  pinned: boolean;
 }
 
 export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<any[]>) {
@@ -33,13 +33,13 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
 
       // Move unaccepted artifacts to rejected list
       const currentArtifacts = artifacts$.value;
-      const unacceptedArtifacts = currentArtifacts.filter((a) => !a.accepted);
-      const acceptedArtifacts = currentArtifacts.filter((a) => a.accepted);
+      const maybeArtifacts = currentArtifacts.filter((a) => !a.pinned);
+      const pinnedArtifacts = currentArtifacts.filter((a) => a.pinned);
 
-      if (unacceptedArtifacts.length > 0) {
-        const newRejectedArtifacts = unacceptedArtifacts.map((a) => a.name);
+      if (maybeArtifacts.length > 0) {
+        const newRejectedArtifacts = maybeArtifacts.map((a) => a.name);
         rejectedArtifacts$.next([...rejectedArtifacts$.value, ...newRejectedArtifacts]);
-        artifacts$.next(acceptedArtifacts);
+        artifacts$.next(pinnedArtifacts);
       }
     }),
     switchMap(({ parti }) =>
@@ -67,7 +67,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
             map((artifact) => ({
               ...artifact,
               id: Math.random().toString(36).substr(2, 9),
-              accepted: false,
+              pinned: false,
             })),
             tap((artifact) => {
               artifacts$.next([...artifacts$.value, artifact]);
@@ -94,7 +94,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
   // Accept artifact effect
   const acceptEffect$ = acceptArtifact$.pipe(
     tap((id) => {
-      const artifacts = artifacts$.value.map((a) => (a.id === id ? { ...a, accepted: !a.accepted } : a));
+      const artifacts = artifacts$.value.map((a) => (a.id === id ? { ...a, pinned: !a.pinned } : a));
       artifacts$.next(artifacts);
     }),
   );
@@ -134,7 +134,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
   // Template
   const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$, editingArtifacts$]).pipe(
     map(
-      ([artifacts, rejectedArtifacts, isGenerating, concepts, editingArtifacts]) => html`
+      ([artifacts, rejectedArtifacts, isGenerating, editingArtifacts]) => html`
         <div class="visualize">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
           <div class="visualize-actions">
@@ -156,7 +156,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
                 <div class="artifacts-grid">
                   ${artifacts.map(
                     (artifact) => html`
-                      <div class="artifact-card ${artifact.accepted ? "accepted" : ""}">
+                      <div class="artifact-card ${artifact.pinned ? "accepted" : ""}">
                         ${editingArtifacts.includes(artifact.id)
                           ? html`
                               <div class="artifact-edit-area">
@@ -195,7 +195,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
                           <div class="artifact-actions">
                             ${editingArtifacts.includes(artifact.id)
                               ? html` <button @click=${() => toggleEdit$.next(artifact.id)}>Done</button> `
-                              : artifact.accepted
+                              : artifact.pinned
                                 ? html` <button @click=${() => acceptArtifact$.next(artifact.id)}>✅ Pinned</button> `
                                 : html`
                                     <button @click=${() => acceptArtifact$.next(artifact.id)}>Pin</button>

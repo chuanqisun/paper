@@ -17,9 +17,9 @@ import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
 import "./conceptualize.css";
 
-interface ConceptWithId extends Concept {
+export interface ConceptWithId extends Concept {
   id: string;
-  favorite: boolean;
+  pinned: boolean;
 }
 
 export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
@@ -46,13 +46,13 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
 
       // Move unfavorited concepts to rejected list
       const currentConcepts = concepts$.value;
-      const unfavoritedConcepts = currentConcepts.filter((c) => !c.favorite);
-      const favoritedConcepts = currentConcepts.filter((c) => c.favorite);
+      const maybeConcepts = currentConcepts.filter((c) => !c.pinned);
+      const pinnedConcepts = currentConcepts.filter((c) => c.pinned);
 
-      if (unfavoritedConcepts.length > 0) {
-        const newRejectedConcepts = unfavoritedConcepts.map((c) => c.concept);
+      if (maybeConcepts.length > 0) {
+        const newRejectedConcepts = maybeConcepts.map((c) => c.concept);
         rejectedConcepts$.next([...rejectedConcepts$.value, ...newRejectedConcepts]);
-        concepts$.next(favoritedConcepts);
+        concepts$.next(pinnedConcepts);
       }
     }),
     switchMap(({ parti }) =>
@@ -72,7 +72,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
             map((concept) => ({
               ...concept,
               id: Math.random().toString(36).substr(2, 9),
-              favorite: false,
+              pinned: false,
             })),
             tap((concept) => {
               concepts$.next([...concepts$.value, concept]);
@@ -107,7 +107,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
   // Favorite concept effect
   const favoriteEffect$ = favoriteConcept$.pipe(
     tap((id) => {
-      const concepts = concepts$.value.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c));
+      const concepts = concepts$.value.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c));
       concepts$.next(concepts);
     }),
   );
@@ -154,7 +154,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                 id: Math.random().toString(36).substr(2, 9),
                 concept,
                 description,
-                favorite: true,
+                pinned: true,
               };
               concepts$.next([newConcept, ...concepts$.value]);
               newConceptTitle$.next("");
@@ -211,7 +211,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
           <div class="concepts-list">
             ${concepts.map(
               (concept) => html`
-                <div class="concept-item ${concept.favorite ? "favorite" : ""}">
+                <div class="concept-item ${concept.pinned ? "favorite" : ""}">
                   <div class="concept-header">
                     <textarea
                       class="concept-title"
@@ -226,9 +226,9 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                     ></textarea>
                     <div class="concept-actions">
                       <button @click=${() => favoriteConcept$.next(concept.id)}>
-                        ${concept.favorite ? "✅ Pinned" : "Pin"}
+                        ${concept.pinned ? "✅ Pinned" : "Pin"}
                       </button>
-                      ${concept.favorite
+                      ${concept.pinned
                         ? null
                         : html`<button @click=${() => rejectConcept$.next(concept.id)}>Reject</button>`}
                     </div>
