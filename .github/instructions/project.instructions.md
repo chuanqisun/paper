@@ -18,6 +18,10 @@ A Human-AI co-iterative loop. Non-linear progression. End with product requireme
 | Parameterize  | Provide domain knowledge  | Suggest aspects of product decision making             |
 | Fit           | Steer AI with preference  | Assign values to produce design decisions              |
 
+## Flow control
+
+- Make sure each step only responds to explicit user action within the step
+
 ## Model access
 
 - Use OpenAI SDK response API for text gen

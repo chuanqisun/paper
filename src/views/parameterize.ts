@@ -9,13 +9,16 @@ import {
   map,
   merge,
   switchMap,
+  take,
   tap,
 } from "rxjs";
 import type { Parameter } from "../lib/generate-parameters";
 import { regenerateParameterDescription$, streamParameters$ } from "../lib/generate-parameters";
 import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
+import type { ConceptWithId } from "./conceptualize.js";
 import "./parameterize.css";
+import type { ArtifactWithId } from "./visualize.js";
 
 export interface ParameterWithId extends Parameter {
   id: string;
@@ -24,8 +27,8 @@ export interface ParameterWithId extends Parameter {
 
 export function parameterizeView(
   apiKeys$: Observable<ApiKeys>,
-  concepts$: Observable<any[]>,
-  artifacts$: Observable<any[]>,
+  concepts$: Observable<ConceptWithId[]>,
+  artifacts$: Observable<ArtifactWithId[]>,
 ) {
   // Internal state
   const parameters$ = new BehaviorSubject<ParameterWithId[]>([]);
@@ -65,7 +68,9 @@ export function parameterizeView(
       parameters$.next(pinnedParameters);
     }),
     switchMap(({ parti, domain }) =>
+      // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([apiKeys$, concepts$, artifacts$]).pipe(
+        take(1), // Only take the current values, don't react to future changes
         map(([apiKeys, concepts, artifacts]) => ({
           parti,
           domain,
@@ -76,16 +81,19 @@ export function parameterizeView(
         switchMap(({ parti, domain, apiKey, concepts, artifacts }) => {
           if (!apiKey) {
             console.error("OpenAI API key not found");
+            isGenerating$.next(false);
             return EMPTY;
           }
 
           if (!domain.trim()) {
             console.error("Domain is required");
+            isGenerating$.next(false);
             return EMPTY;
           }
 
           if (concepts.length === 0) {
             console.error("No concepts available");
+            isGenerating$.next(false);
             return EMPTY;
           }
 

@@ -9,6 +9,7 @@ import {
   map,
   merge,
   switchMap,
+  take,
   tap,
 } from "rxjs";
 import type { Concept } from "../lib/generate-concepts";
@@ -56,8 +57,10 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
       }
     }),
     switchMap(({ parti }) =>
+      // Take current API key at the moment the user action is triggered, not reactive to future changes
       apiKeys$.pipe(
-        map((apiKeys) => ({ parti, apiKey: apiKeys.openai })),
+        take(1), // Only take the current value, don't react to future changes
+        map((apiKeys: ApiKeys) => ({ parti, apiKey: apiKeys.openai })),
         switchMap(({ parti, apiKey }) => {
           if (!apiKey) {
             console.error("OpenAI API key not found");

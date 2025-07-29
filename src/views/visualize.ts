@@ -1,9 +1,10 @@
 import { html } from "lit-html";
 import { BehaviorSubject, Observable, Subject, combineLatest, merge } from "rxjs";
-import { catchError, map, switchMap, tap } from "rxjs/operators";
+import { catchError, map, switchMap, take, tap } from "rxjs/operators";
 import { streamArtifacts$, type Artifact } from "../lib/generate-artifacts.js";
 import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
+import type { ConceptWithId } from "./conceptualize.js";
 import "./visualize.css";
 
 export interface ArtifactWithId extends Artifact {
@@ -11,7 +12,7 @@ export interface ArtifactWithId extends Artifact {
   pinned: boolean;
 }
 
-export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<any[]>) {
+export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<ConceptWithId[]>) {
   // Internal state
   const artifacts$ = new BehaviorSubject<ArtifactWithId[]>([]);
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
@@ -43,7 +44,9 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
       }
     }),
     switchMap(({ parti }) =>
+      // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([apiKeys$, concepts$]).pipe(
+        take(1), // Only take the current values, don't react to future changes
         map(([apiKeys, concepts]) => ({
           parti,
           apiKey: apiKeys.openai,
@@ -52,11 +55,13 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
         switchMap(({ parti, apiKey, concepts }) => {
           if (!apiKey) {
             console.error("OpenAI API key not available");
+            isGenerating$.next(false);
             return [];
           }
 
           if (concepts.length === 0) {
             console.error("No accepted concepts available");
+            isGenerating$.next(false);
             return [];
           }
 
