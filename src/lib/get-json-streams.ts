@@ -54,7 +54,7 @@ Generate conceptual keywords that best represent this Parti:
 ${params.parti}
 \`\`\`${existingList}${rejectedList}
 
-Generate 5-7 new concepts (words or short phrases) with short descriptions that capture the essence of the Parti. Each concept should be unique and meaningful.
+Generate up to ${params.existingConcepts.length ? 3 : 5} new concepts (one word, or compound word) with short descriptions that capture the essence of the Parti. Each concept should be unique and meaningful.
 
 Respond in this JSON format:
 {

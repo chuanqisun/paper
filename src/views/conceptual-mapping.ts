@@ -44,7 +44,20 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
 
   // Generate concepts effect
   const generateEffect$ = generateConcepts$.pipe(
-    tap(() => isGenerating$.next(true)),
+    tap(() => {
+      isGenerating$.next(true);
+
+      // Move unfavorited concepts to rejected list
+      const currentConcepts = concepts$.value;
+      const unfavoritedConcepts = currentConcepts.filter((c) => !c.favorite);
+      const favoritedConcepts = currentConcepts.filter((c) => c.favorite);
+
+      if (unfavoritedConcepts.length > 0) {
+        const newRejectedConcepts = unfavoritedConcepts.map((c) => c.concept);
+        rejectedConcepts$.next([...rejectedConcepts$.value, ...newRejectedConcepts]);
+        concepts$.next(favoritedConcepts);
+      }
+    }),
     switchMap(({ parti }) =>
       apiKeys$.pipe(
         map((apiKeys) => ({ parti, apiKey: apiKeys.openai })),
