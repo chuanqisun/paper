@@ -1,8 +1,8 @@
 ---
-applyTo: "**/materialize.*,**/generate-artifacts.ts"
+applyTo: "**/visualize.*,**/generate-artifacts.ts"
 ---
 
-# Feature: Materialize
+# Feature: Visualize
 
 ## What
 

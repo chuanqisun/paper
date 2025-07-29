@@ -14,7 +14,7 @@ A Human-AI co-iterative loop. Non-linear progression. End with product requireme
 | ------------- | ------------------------- | -------------------------------------------------------- |
 | Parti         | Write down one "big idea" | Suggest alternatives                                     |
 | Conceptualize | Explore related concepts  | Suggest and define concepts                              |
-| Materialize   | Steer AI with preference  | Generate artifacts while adhering to latest preference   |
+| Visualize     | Steer AI with preference  | Generate artifacts while adhering to latest preference   |
 | Parameterize  | Specify domain parameters | Suggest additional aspects, and suggest attribute values |
 | Render        | Steer with PRD            | Generate PRD and render products                         |
 

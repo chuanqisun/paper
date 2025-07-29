@@ -4,14 +4,14 @@ import { catchError, map, switchMap, tap } from "rxjs/operators";
 import { streamArtifacts$, type Artifact } from "../lib/generate-artifacts.js";
 import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
-import "./materialize.css";
+import "./visualize.css";
 
 interface ArtifactWithId extends Artifact {
   id: string;
   accepted: boolean;
 }
 
-export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<any[]>) {
+export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<any[]>) {
   // Internal state
   const artifacts$ = new BehaviorSubject<ArtifactWithId[]>([]);
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
@@ -135,9 +135,9 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$, editingArtifacts$]).pipe(
     map(
       ([artifacts, rejectedArtifacts, isGenerating, concepts, editingArtifacts]) => html`
-        <div class="materialize">
+        <div class="visualize">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
-          <div class="materialize-actions">
+          <div class="visualize-actions">
             <button
               @click=${() => {
                 const parti = (document.querySelector("#parti-content textarea") as HTMLTextAreaElement)?.value || "";
@@ -240,7 +240,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   const staticTemplate = html`${observe(template$)}`;
 
   return {
-    materializeTemplate: staticTemplate,
+    visualizeTemplate: staticTemplate,
     artifacts$,
     effects$,
   };
