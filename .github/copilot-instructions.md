@@ -29,6 +29,7 @@ applyTo: "**"
 - Use latest CSS features, including variables, grid, flexbox
 - Nesting is ok
 - Component specific styles should be in the {component-name}.css file, next to {component-name}.ts
+- Component CSS should nest all internal styles under a root class, e.g. `.component-name { ... }`
 - The component ts file should import its own css file
 - Global styles are in /src/main.css
 

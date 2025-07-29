@@ -38,7 +38,6 @@ export function fitView(
   const designs$ = new BehaviorSubject<DesignWithId[]>([]);
   const rejectedDesigns$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
-  const editingDesigns$ = new BehaviorSubject<string[]>([]);
 
   // Actions
   const generateDesigns$ = new Subject<void>();
@@ -46,7 +45,6 @@ export function fitView(
   const pinDesign$ = new Subject<string>();
   const rejectDesign$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
-  const toggleEdit$ = new Subject<string>();
 
   // Generate designs effect
   const generateEffect$ = generateDesigns$.pipe(
@@ -183,22 +181,10 @@ export function fitView(
     }),
   );
 
-  // Toggle edit effect
-  const toggleEditEffect$ = toggleEdit$.pipe(
-    tap((id) => {
-      const editing = editingDesigns$.value;
-      if (editing.includes(id)) {
-        editingDesigns$.next(editing.filter((e) => e !== id));
-      } else {
-        editingDesigns$.next([...editing, id]);
-      }
-    }),
-  );
-
   // Template
-  const template$ = combineLatest([designs$, rejectedDesigns$, isGenerating$, editingDesigns$]).pipe(
+  const template$ = combineLatest([designs$, rejectedDesigns$, isGenerating$]).pipe(
     map(
-      ([designs, rejectedDesigns, isGenerating, editingDesigns]) => html`
+      ([designs, rejectedDesigns, isGenerating]) => html`
         <div class="fit">
           <p>Generate design specifications by assigning concrete values to parameters</p>
           <div class="fit-actions">
@@ -217,16 +203,11 @@ export function fitView(
                 <div class="designs-grid">
                   ${designs.map(
                     (design) => html`
-                      <div
-                        class="design-card ${design.pinned ? "pinned" : ""} ${editingDesigns.includes(design.id)
-                          ? "design-edit-mode"
-                          : ""}"
-                      >
+                      <div class="design-card ${design.pinned ? "pinned" : ""}">
                         <textarea
                           class="design-name"
                           rows="1"
                           .value=${design.name}
-                          ?readonly=${!editingDesigns.includes(design.id)}
                           @input=${(e: Event) =>
                             editDesign$.next({
                               id: design.id,
@@ -243,7 +224,6 @@ export function fitView(
                                   class="parameter-value"
                                   rows="1"
                                   .value=${paramValue}
-                                  ?readonly=${!editingDesigns.includes(design.id)}
                                   @input=${(e: Event) =>
                                     editDesign$.next({
                                       id: design.id,
@@ -257,17 +237,14 @@ export function fitView(
                           )}
                         </div>
                         <div class="design-actions">
-                          ${editingDesigns.includes(design.id)
-                            ? html` <button class="small" @click=${() => toggleEdit$.next(design.id)}>Done</button> `
-                            : design.pinned
-                              ? html`
-                                  <button class="small" @click=${() => pinDesign$.next(design.id)}>✅ Pinned</button>
-                                `
-                              : html`
-                                  <button class="small" @click=${() => pinDesign$.next(design.id)}>Pin</button>
-                                  <button class="small" @click=${() => toggleEdit$.next(design.id)}>Edit</button>
-                                  <button class="small" @click=${() => rejectDesign$.next(design.id)}>Reject</button>
-                                `}
+                          ${design.pinned
+                            ? html`
+                                <button class="small" @click=${() => pinDesign$.next(design.id)}>✅ Pinned</button>
+                              `
+                            : html`
+                                <button class="small" @click=${() => pinDesign$.next(design.id)}>Pin</button>
+                                <button class="small" @click=${() => rejectDesign$.next(design.id)}>Reject</button>
+                              `}
                         </div>
                       </div>
                     `,
@@ -300,7 +277,7 @@ export function fitView(
   );
 
   // Merge all effects
-  const effects$ = merge(generateEffect$, editEffect$, pinEffect$, rejectEffect$, revertEffect$, toggleEditEffect$);
+  const effects$ = merge(generateEffect$, editEffect$, pinEffect$, rejectEffect$, revertEffect$);
 
   const staticTemplate = html`${observe(template$)}`;
 

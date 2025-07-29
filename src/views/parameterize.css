@@ -2,126 +2,126 @@
   display: flex;
   flex-direction: column;
   gap: 1ch;
-}
 
-.parameterize-placeholder {
-  color: #666;
-  margin-bottom: 2ch;
-}
+  .parameterize-placeholder {
+    color: #666;
+    margin-bottom: 2ch;
+  }
 
-.parameterize-placeholder ul {
-  margin: 1ch 0;
-  padding-left: 2ch;
-}
+  .parameterize-placeholder ul {
+    margin: 1ch 0;
+    padding-left: 2ch;
+  }
 
-.domain-input {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5ch;
-  margin-bottom: 2ch;
-}
+  .domain-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5ch;
+    margin-bottom: 2ch;
+  }
 
-.parameterize-actions {
-  display: flex;
-  gap: 1ch;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
+  .parameterize-actions {
+    display: flex;
+    gap: 1ch;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
 
-.parameterize-actions textarea {
-  flex: 1;
-}
+  .parameterize-actions textarea {
+    flex: 1;
+  }
 
-.parameters-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1ch;
-}
+  .parameters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1ch;
+  }
 
-.parameter-card {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #eee;
-  background: white;
-  padding: 1ch;
-  gap: 0.5ch;
-}
+  .parameter-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #eee;
+    background: white;
+    padding: 1ch;
+    gap: 0.5ch;
+  }
 
-.parameter-card.pinned {
-  border-color: black;
-  background: #fafafa;
-}
+  .parameter-card.pinned {
+    border-color: black;
+    background: #fafafa;
+  }
 
-.parameter-name {
-  font-weight: bold;
-  min-width: 0;
-  flex: 1;
-  font-family: inherit;
-  font-size: inherit;
-  border: none;
-  background: transparent;
-  width: 100%;
-  resize: none;
-  field-sizing: content;
-}
+  .parameter-name {
+    font-weight: bold;
+    min-width: 0;
+    flex: 1;
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    background: transparent;
+    width: 100%;
+    resize: none;
+    field-sizing: content;
+  }
 
-.parameter-description {
-  color: #666;
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: inherit;
-  resize: none;
-  field-sizing: content;
-  min-height: 2lh;
-}
+  .parameter-description {
+    color: #666;
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    resize: none;
+    field-sizing: content;
+    min-height: 2lh;
+  }
 
-.parameter-actions {
-  display: flex;
-  gap: 0.5ch;
-  margin-top: auto;
-  flex-shrink: 0;
-  justify-content: flex-start;
-}
+  .parameter-actions {
+    display: flex;
+    gap: 0.5ch;
+    margin-top: auto;
+    flex-shrink: 0;
+    justify-content: flex-start;
+  }
 
-.rejected-parameters {
-  margin-top: 2ch;
-}
+  .rejected-parameters {
+    margin-top: 2ch;
+  }
 
-.rejected-parameters summary {
-  cursor: pointer;
-  color: #666;
-}
+  .rejected-parameters summary {
+    cursor: pointer;
+    color: #666;
+  }
 
-.rejected-list {
-  margin-top: 1ch;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5ch;
-}
+  .rejected-list {
+    margin-top: 1ch;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5ch;
+  }
 
-.rejected-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5ch;
-  background: #f8f8f8;
-  color: #666;
-}
+  .rejected-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5ch;
+    background: #f8f8f8;
+    color: #666;
+  }
 
-.rejected-item button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25ch 0.5ch;
-}
+  .rejected-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25ch 0.5ch;
+  }
 
-.rejected-item button:hover {
-  background: #eee;
-}
+  .rejected-item button:hover {
+    background: #eee;
+  }
 
-.loading {
-  color: #666;
-  font-style: italic;
+  .loading {
+    color: #666;
+    font-style: italic;
+  }
 }

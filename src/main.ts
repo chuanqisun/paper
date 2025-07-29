@@ -26,7 +26,14 @@ const {
   domain$,
   effects$: parameterize$,
 } = parameterizeView(apiKeys$, concepts$, artifacts$, partiText$);
-const { fitTemplate, effects$: fitEffects$ } = fitView(apiKeys$, concepts$, artifacts$, parameters$, partiText$, domain$);
+const { fitTemplate, effects$: fitEffects$ } = fitView(
+  apiKeys$,
+  concepts$,
+  artifacts$,
+  parameters$,
+  partiText$,
+  domain$,
+);
 
 // 3. Effects: subscribe and render
 render(connectionsTemplate, connectionsContent);

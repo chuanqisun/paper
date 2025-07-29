@@ -190,7 +190,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
   ]).pipe(
     map(
       ([concepts, rejectedConcepts, isGenerating, newTitle, isGeneratingDescription]) => html`
-        <div class="conceptual-mapping">
+        <div class="conceptualize">
           <p>Explore related concepts that capture the essence of your Parti</p>
           <div class="conceptual-actions">
             <button
