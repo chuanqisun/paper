@@ -10,6 +10,8 @@ Use the Parti, concepts, visual artifacts, and parameters from all previous step
 
 ## How
 
+### Part 1: Assign parameters
+
 Input: Parti (string), list of concepts ({name: string, description: string}[]), visual artifacts (image URLs and descriptions), list of parameters ({name: string, description: string}[])
 Output: list of designs ({name: string, parameterAssignments: Record<string, string>}[])
 
@@ -23,12 +25,34 @@ We generate 3 initially, and 2 incrementally
 
 Design generation is single thread but we will receive incremental outputs (as we do in concept generation).
 
+### Part 2: Render product mockups
+
+Input: list of designs ({name: string, parameterAssignments: Record<string, string>}[]), domain (string from parameterize step)
+Intermediate output: list of mockups ({name: string, description: string}[])
+Final output: list of images (urls)
+
+Mockup name is for human to quickly identify what it represents. It should be very short, one word, or a short phrase only.
+
+Mockup description is a detailed text description for AI to generate images from. It should be one sentence long, detailed description including subject, scene, style, and additional details according to the parameter assignments and domain context.
+
+Mockup generation uses a similar process to artifact generation, with a system prompt that instructs the LLM to create product design mockups based on the parameter assignments and domain knowledge. The mockups should visualize how the design decisions would manifest in actual products within the specified domain.
+
+We generate 3 initially, and 2 incrementally
+
+Mockup generation is single thread but we will receive incremental outputs (as we do in concept generation).
+
+Text-to-image generation should run concurrently. We kick off image gen as soon as each mockup description is generated. This can be achieved with RxJS mergeMap operator.
+
 ## User control
 
 A button to Generate Designs (design specifications)
 For each design, user can see the design name and all parameter assignments.
 For each design, user can Pin, Edit, or Reject it, similar to the concept generation workflow
 User can edit parameter assignments directly within each design card
+
+A button to Render Mockups (product design mockups) that uses the generated parameters and domain from the parameterize step
+For each mockup, user can Pin, Edit, or Reject it, similar to the visualize workflow
+User needs to click an Edit button to see the text representation behind the image
 
 ## UI
 
@@ -42,3 +66,7 @@ Rejected designs only show the name with a restore button.
 Pinned designs are visually highlighted and persist across sessions.
 
 For editing, expand the card to show editable input fields for each parameter assignment.
+
+Display rendered mockups as cards in a grid layout similar to the visualize feature. The cards are like Polaroids with the image on top and the description below.
+
+Rejected mockups only show the title with a restore button.
