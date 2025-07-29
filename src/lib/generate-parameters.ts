@@ -121,13 +121,22 @@ export function regenerateParameterDescription$(params: {
 
     (async () => {
       try {
-        const prompt = `Generate a description for the design parameter "${params.parameterName}" in the context of ${params.domain}.
-
-The description should be a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.`;
-
         const response = await openai.responses.create({
           model: "gpt-4.1",
-          input: prompt,
+          input: [
+            {
+              role: "developer",
+              content: `Generate a description for a design parameter in the context of ${params.domain}. The description should be a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.`,
+            },
+
+            // Few-shot examples using existing parameters
+            ...(params.existingParameters ?? []).flatMap((example) => [
+              { role: "user" as const, content: example.name },
+              { role: "assistant" as const, content: example.description },
+            ]),
+
+            { role: "user", content: params.parameterName },
+          ],
         });
 
         const message = response.output[0];
