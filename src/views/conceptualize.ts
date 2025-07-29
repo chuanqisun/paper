@@ -15,6 +15,7 @@ import type { Concept } from "../lib/get-json-streams";
 import { regenerateDescription$, streamConcepts$ } from "../lib/get-json-streams";
 import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
+import "./conceptualize.css";
 
 interface ConceptWithId extends Concept {
   id: string;

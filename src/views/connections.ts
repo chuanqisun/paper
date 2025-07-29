@@ -4,6 +4,7 @@ import { catchError, debounceTime, distinctUntilChanged, mergeMap, tap } from "r
 import { observe } from "../lib/observe-directive";
 import { loadApiKeys, saveApiKeys, type ApiKeys } from "../lib/storage";
 import { testConnection } from "../lib/test-connections";
+import "./connections.css";
 
 export interface ConnectionsViewResult {
   connectionsTemplate: TemplateResult;

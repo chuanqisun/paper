@@ -1,11 +1,8 @@
 import { render } from "lit-html";
 import "./main.css";
-import { conceptualMappingView } from "./views/conceptual-mapping";
-import "./views/conceptual-mapping.css";
+import { conceptualMappingView } from "./views/conceptualize";
 import { connectionsView } from "./views/connections";
-import "./views/connections.css";
 import { partiView } from "./views/parti";
-import "./views/parti.css";
 
 // 1. Global DOM references
 const connectionsContent = document.querySelector(".connections-content") as HTMLElement;

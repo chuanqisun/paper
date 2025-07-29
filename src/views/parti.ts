@@ -2,6 +2,7 @@ import type { TemplateResult } from "lit-html";
 import { html } from "lit-html";
 import { BehaviorSubject } from "rxjs";
 import { observe } from "../lib/observe-directive";
+import "./parti.css";
 
 export function partiView() {
   // Internal state
