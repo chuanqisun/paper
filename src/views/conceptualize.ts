@@ -11,8 +11,8 @@ import {
   switchMap,
   tap,
 } from "rxjs";
-import type { Concept } from "../lib/get-json-streams";
-import { regenerateDescription$, streamConcepts$ } from "../lib/get-json-streams";
+import type { Concept } from "../lib/generate-concepts";
+import { regenerateDescription$, streamConcepts$ } from "../lib/generate-concepts";
 import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
 import "./conceptualize.css";
