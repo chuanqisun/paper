@@ -65,6 +65,7 @@ ${conceptsList}
 \`\`\`${existingList}${rejectedList}
 
 Generate ${count} diverse artifacts that would be commonly seen in a moodboard. Each artifact should represent multi-sensory aspects of the Parti and be suitable for image generation.
+An artifact should be grounded in the real world and human's lived experience, e.g. an object, material, texture, color scheme, sound, smell, emotion, or environment that evokes the intended experience of the design.
 
 Artifact name should be very short (one word or short phrase).
 Artifact description should be one detailed sentence including subject, scene, and style for AI image generation.

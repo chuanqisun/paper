@@ -32,7 +32,7 @@ User can edit parameter assignments directly within each design card
 
 ## UI
 
-Display designs as cards in a grid. Each card shows:
+Display designs as cards in a single column layout. Each card shows:
 
 - Design name as the header
 - Parameter assignments as key-value pairs below

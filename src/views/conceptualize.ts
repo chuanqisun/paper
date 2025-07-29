@@ -23,7 +23,7 @@ export interface ConceptWithId extends Concept {
   pinned: boolean;
 }
 
-export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
+export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Observable<string>) {
   // Internal state
   const concepts$ = new BehaviorSubject<ConceptWithId[]>([]);
   const rejectedConcepts$ = new BehaviorSubject<string[]>([]);
@@ -32,7 +32,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
   const isGeneratingDescription$ = new BehaviorSubject<boolean>(false);
 
   // Actions
-  const generateConcepts$ = new Subject<{ parti: string }>();
+  const generateConcepts$ = new Subject<void>();
   const editConcept$ = new Subject<{ id: string; field: "concept" | "description"; value: string }>();
   const deleteConcept$ = new Subject<string>();
   const favoriteConcept$ = new Subject<string>();
@@ -56,14 +56,20 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
         concepts$.next(pinnedConcepts);
       }
     }),
-    switchMap(({ parti }) =>
-      // Take current API key at the moment the user action is triggered, not reactive to future changes
-      apiKeys$.pipe(
-        take(1), // Only take the current value, don't react to future changes
-        map((apiKeys: ApiKeys) => ({ parti, apiKey: apiKeys.openai })),
+    switchMap(() =>
+      // Take current values at the moment the user action is triggered, not reactive to future changes
+      combineLatest([parti$, apiKeys$]).pipe(
+        take(1), // Only take the current values, don't react to future changes
+        map(([parti, apiKeys]) => ({ parti, apiKey: apiKeys.openai })),
         switchMap(({ parti, apiKey }) => {
           if (!apiKey) {
             console.error("OpenAI API key not found");
+            isGenerating$.next(false);
+            return EMPTY;
+          }
+
+          if (!parti) {
+            console.error("Parti not found");
             isGenerating$.next(false);
             return EMPTY;
           }
@@ -189,10 +195,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
           <div class="conceptual-actions">
             <button
               @click=${() => {
-                const parti = (document.querySelector("#parti-content textarea") as HTMLTextAreaElement)?.value || "";
-                if (parti) {
-                  generateConcepts$.next({ parti });
-                }
+                generateConcepts$.next();
               }}
             >
               Generate Concepts

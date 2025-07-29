@@ -62,7 +62,7 @@ applyTo: "**"
 - They should be pure functions that take data and return lit-html templates
   - Input: any observables it depends on
   - Output: lit-html template, and observables if it created new ones for other components to consume
-- When approperiate, use native DOM events
+- Avoid querying DOM (they are not type checkable). Instead pass in observables as parameters
 
 ## RxJS pattern in views
 

@@ -29,6 +29,7 @@ export function parameterizeView(
   apiKeys$: Observable<ApiKeys>,
   concepts$: Observable<ConceptWithId[]>,
   artifacts$: Observable<ArtifactWithId[]>,
+  parti$: Observable<string>,
 ) {
   // Internal state
   const parameters$ = new BehaviorSubject<ParameterWithId[]>([]);
@@ -39,7 +40,7 @@ export function parameterizeView(
   const isGeneratingDescription$ = new BehaviorSubject<boolean>(false);
 
   // Actions
-  const generateParameters$ = new Subject<{ parti: string; domain: string }>();
+  const generateParameters$ = new Subject<void>();
   const editParameter$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
   const pinParameter$ = new Subject<string>();
   const rejectParameter$ = new Subject<string>();
@@ -67,11 +68,11 @@ export function parameterizeView(
 
       parameters$.next(pinnedParameters);
     }),
-    switchMap(({ parti, domain }) =>
+    switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([apiKeys$, concepts$, artifacts$]).pipe(
+      combineLatest([apiKeys$, concepts$, artifacts$, parti$, domain$]).pipe(
         take(1), // Only take the current values, don't react to future changes
-        map(([apiKeys, concepts, artifacts]) => ({
+        map(([apiKeys, concepts, artifacts, parti, domain]) => ({
           parti,
           domain,
           apiKey: apiKeys.openai,
@@ -81,6 +82,12 @@ export function parameterizeView(
         switchMap(({ parti, domain, apiKey, concepts, artifacts }) => {
           if (!apiKey) {
             console.error("OpenAI API key not found");
+            isGenerating$.next(false);
+            return EMPTY;
+          }
+
+          if (!parti) {
+            console.error("Parti not found");
             isGenerating$.next(false);
             return EMPTY;
           }
@@ -243,11 +250,7 @@ export function parameterizeView(
           <div class="parameterize-actions">
             <button
               @click=${() => {
-                const parti = (document.querySelector("#parti-content textarea") as HTMLTextAreaElement)?.value || "";
-                const currentDomain = domain$.value;
-                if (parti && currentDomain.trim()) {
-                  generateParameters$.next({ parti, domain: currentDomain });
-                }
+                generateParameters$.next();
               }}
               ?disabled=${!domain.trim() || concepts.length === 0}
             >
@@ -354,6 +357,7 @@ export function parameterizeView(
   return {
     parameterizeTemplate: staticTemplate,
     parameters$,
+    domain$,
     effects$,
   };
 }

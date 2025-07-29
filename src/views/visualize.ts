@@ -12,7 +12,11 @@ export interface ArtifactWithId extends Artifact {
   pinned: boolean;
 }
 
-export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observable<ConceptWithId[]>) {
+export function visualizeView(
+  apiKeys$: Observable<ApiKeys>,
+  concepts$: Observable<ConceptWithId[]>,
+  parti$: Observable<string>,
+) {
   // Internal state
   const artifacts$ = new BehaviorSubject<ArtifactWithId[]>([]);
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
@@ -20,7 +24,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
   const editingArtifacts$ = new BehaviorSubject<string[]>([]);
 
   // Actions
-  const generateArtifacts$ = new Subject<{ parti: string }>();
+  const generateArtifacts$ = new Subject<void>();
   const editArtifact$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
   const acceptArtifact$ = new Subject<string>();
   const rejectArtifact$ = new Subject<string>();
@@ -43,11 +47,11 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
         artifacts$.next(pinnedArtifacts);
       }
     }),
-    switchMap(({ parti }) =>
+    switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([apiKeys$, concepts$]).pipe(
+      combineLatest([apiKeys$, concepts$, parti$]).pipe(
         take(1), // Only take the current values, don't react to future changes
-        map(([apiKeys, concepts]) => ({
+        map(([apiKeys, concepts, parti]) => ({
           parti,
           apiKey: apiKeys.openai,
           concepts: concepts.map((c) => ({ name: c.concept, description: c.description })),
@@ -55,6 +59,12 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
         switchMap(({ parti, apiKey, concepts }) => {
           if (!apiKey) {
             console.error("OpenAI API key not available");
+            isGenerating$.next(false);
+            return [];
+          }
+
+          if (!parti) {
+            console.error("Parti not found");
             isGenerating$.next(false);
             return [];
           }
@@ -145,10 +155,7 @@ export function visualizeView(apiKeys$: Observable<ApiKeys>, concepts$: Observab
           <div class="visualize-actions">
             <button
               @click=${() => {
-                const parti = (document.querySelector("#parti-content textarea") as HTMLTextAreaElement)?.value || "";
-                if (parti) {
-                  generateArtifacts$.next({ parti });
-                }
+                generateArtifacts$.next();
               }}
             >
               Generate Artifacts
