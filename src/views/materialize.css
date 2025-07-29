@@ -47,7 +47,6 @@
   flex-direction: column;
   border: 1px solid #eee;
   background: white;
-  min-height: 12ch;
 }
 
 .artifact-card.accepted {
@@ -73,13 +72,6 @@
   flex: 1;
 }
 
-.artifact-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5ch;
-}
-
 .artifact-name {
   font-weight: bold;
   min-width: 0;
@@ -95,6 +87,8 @@
 
 .artifact-actions {
   display: flex;
+  gap: 0.5ch;
+  margin-top: auto;
   flex-shrink: 0;
 }
 

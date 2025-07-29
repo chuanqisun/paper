@@ -145,27 +145,17 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
                       <div class="artifact-card ${artifact.accepted ? "accepted" : ""}">
                         <div class="artifact-placeholder">Image placeholder</div>
                         <div class="artifact-content">
-                          <div class="artifact-header">
-                            <textarea
-                              class="artifact-name"
-                              rows="1"
-                              .value=${artifact.name}
-                              @input=${(e: Event) =>
-                                editArtifact$.next({
-                                  id: artifact.id,
-                                  field: "name",
-                                  value: (e.target as HTMLTextAreaElement).value,
-                                })}
-                            ></textarea>
-                            <div class="artifact-actions">
-                              <button @click=${() => acceptArtifact$.next(artifact.id)}>
-                                ${artifact.accepted ? "✅" : "Accept"}
-                              </button>
-                              ${artifact.accepted
-                                ? null
-                                : html`<button @click=${() => rejectArtifact$.next(artifact.id)}>✕</button>`}
-                            </div>
-                          </div>
+                          <textarea
+                            class="artifact-name"
+                            rows="1"
+                            .value=${artifact.name}
+                            @input=${(e: Event) =>
+                              editArtifact$.next({
+                                id: artifact.id,
+                                field: "name",
+                                value: (e.target as HTMLTextAreaElement).value,
+                              })}
+                          ></textarea>
                           <textarea
                             class="artifact-description"
                             .value=${artifact.description}
@@ -176,6 +166,14 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
                                 value: (e.target as HTMLTextAreaElement).value,
                               })}
                           ></textarea>
+                          <div class="artifact-actions">
+                            <button @click=${() => acceptArtifact$.next(artifact.id)}>
+                              ${artifact.accepted ? "✅ Pinned" : "Pin"}
+                            </button>
+                            ${artifact.accepted
+                              ? null
+                              : html`<button @click=${() => rejectArtifact$.next(artifact.id)}>✕</button>`}
+                          </div>
                         </div>
                       </div>
                     `,
