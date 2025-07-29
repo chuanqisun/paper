@@ -20,7 +20,7 @@ export function partiView() {
       <textarea
         id="parti"
         class="parti-textarea"
-        placeholder="Negative Gravity"
+        placeholder="Gravity is illusion"
         rows="2"
         .value=${observe(partiText$)}
         @input=${handleInput}
