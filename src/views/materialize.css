@@ -64,12 +64,38 @@
   font-size: 0.9em;
 }
 
+.artifact-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.artifact-edit-area {
+  height: 12ch;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.artifact-description-edit {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #f8f8f8;
+  font-family: inherit;
+  font-size: 0.9em;
+  padding: 1ch;
+  resize: none;
+  field-sizing: content;
+}
+
 .artifact-content {
   padding: 1ch;
   display: flex;
   flex-direction: column;
   gap: 0.5ch;
-  flex: 1;
+  flex-grow: 0;
 }
 
 .artifact-name {
@@ -90,30 +116,20 @@
   gap: 0.5ch;
   margin-top: auto;
   flex-shrink: 0;
+  justify-content: space-between;
 }
 
 .artifact-actions button {
   padding: 0.5ch;
-  border: none;
-  background: transparent;
+  border: 1px solid #ccc;
+  background: white;
   cursor: pointer;
   font-size: 0.8em;
+  flex: 1;
 }
 
 .artifact-actions button:hover {
   background: #f0f0f0;
-}
-
-.artifact-description {
-  color: #666;
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.9em;
-  resize: none;
-  field-sizing: content;
-  flex: 1;
 }
 
 .rejected-artifacts {

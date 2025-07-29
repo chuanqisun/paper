@@ -16,6 +16,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   const artifacts$ = new BehaviorSubject<ArtifactWithId[]>([]);
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
+  const editingArtifacts$ = new BehaviorSubject<string[]>([]);
 
   // Actions
   const generateArtifacts$ = new Subject<{ parti: string }>();
@@ -23,6 +24,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   const acceptArtifact$ = new Subject<string>();
   const rejectArtifact$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
+  const toggleEdit$ = new Subject<string>();
 
   // Generate artifacts effect
   const generateEffect$ = generateArtifacts$.pipe(
@@ -117,10 +119,22 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
     }),
   );
 
+  // Toggle edit effect
+  const toggleEditEffect$ = toggleEdit$.pipe(
+    tap((id) => {
+      const editing = editingArtifacts$.value;
+      if (editing.includes(id)) {
+        editingArtifacts$.next(editing.filter((e) => e !== id));
+      } else {
+        editingArtifacts$.next([...editing, id]);
+      }
+    }),
+  );
+
   // Template
-  const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$]).pipe(
+  const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, concepts$, editingArtifacts$]).pipe(
     map(
-      ([artifacts, rejectedArtifacts, isGenerating]) => html`
+      ([artifacts, rejectedArtifacts, isGenerating, concepts, editingArtifacts]) => html`
         <div class="materialize">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
           <div class="materialize-actions">
@@ -143,7 +157,29 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
                   ${artifacts.map(
                     (artifact) => html`
                       <div class="artifact-card ${artifact.accepted ? "accepted" : ""}">
-                        <div class="artifact-placeholder">Image placeholder</div>
+                        ${editingArtifacts.includes(artifact.id)
+                          ? html`
+                              <div class="artifact-edit-area">
+                                <textarea
+                                  class="artifact-description-edit"
+                                  .value=${artifact.description}
+                                  @input=${(e: Event) =>
+                                    editArtifact$.next({
+                                      id: artifact.id,
+                                      field: "description",
+                                      value: (e.target as HTMLTextAreaElement).value,
+                                    })}
+                                ></textarea>
+                              </div>
+                            `
+                          : html`
+                              <img
+                                class="artifact-image"
+                                src="https://placehold.co/400"
+                                alt="${artifact.name}"
+                                title="${artifact.description}"
+                              />
+                            `}
                         <div class="artifact-content">
                           <textarea
                             class="artifact-name"
@@ -156,23 +192,16 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
                                 value: (e.target as HTMLTextAreaElement).value,
                               })}
                           ></textarea>
-                          <textarea
-                            class="artifact-description"
-                            .value=${artifact.description}
-                            @input=${(e: Event) =>
-                              editArtifact$.next({
-                                id: artifact.id,
-                                field: "description",
-                                value: (e.target as HTMLTextAreaElement).value,
-                              })}
-                          ></textarea>
                           <div class="artifact-actions">
-                            <button @click=${() => acceptArtifact$.next(artifact.id)}>
-                              ${artifact.accepted ? "✅ Pinned" : "Pin"}
-                            </button>
-                            ${artifact.accepted
-                              ? null
-                              : html`<button @click=${() => rejectArtifact$.next(artifact.id)}>✕</button>`}
+                            ${editingArtifacts.includes(artifact.id)
+                              ? html` <button @click=${() => toggleEdit$.next(artifact.id)}>Done</button> `
+                              : artifact.accepted
+                                ? html` <button @click=${() => acceptArtifact$.next(artifact.id)}>✅ Pinned</button> `
+                                : html`
+                                    <button @click=${() => acceptArtifact$.next(artifact.id)}>Pin</button>
+                                    <button @click=${() => toggleEdit$.next(artifact.id)}>Edit</button>
+                                    <button @click=${() => rejectArtifact$.next(artifact.id)}>Reject</button>
+                                  `}
                           </div>
                         </div>
                       </div>
@@ -206,7 +235,7 @@ export function materializeView(apiKeys$: Observable<ApiKeys>, concepts$: Observ
   );
 
   // Merge all effects
-  const effects$ = merge(generateEffect$, editEffect$, acceptEffect$, rejectEffect$, revertEffect$);
+  const effects$ = merge(generateEffect$, editEffect$, acceptEffect$, rejectEffect$, revertEffect$, toggleEditEffect$);
 
   const staticTemplate = html`${observe(template$)}`;
 
