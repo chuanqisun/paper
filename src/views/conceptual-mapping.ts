@@ -155,7 +155,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                 description,
                 favorite: true,
               };
-              concepts$.next([...concepts$.value, newConcept]);
+              concepts$.next([newConcept, ...concepts$.value]);
               newConceptTitle$.next("");
               isGeneratingDescription$.next(false);
             }),
@@ -191,6 +191,16 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
               }}
             >
               Generate Concepts
+            </button>
+            <textarea
+              rows="1"
+              placeholder="New concept..."
+              .value=${newTitle}
+              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
+              ?disabled=${isGeneratingDescription}
+            ></textarea>
+            <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
+              ${isGeneratingDescription ? "Generating..." : "Add Concept"}
             </button>
           </div>
 
@@ -234,19 +244,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>) {
                 </div>
               `,
             )}
-          </div>
-
-          <div class="manual-add">
-            <textarea
-              rows="1"
-              placeholder="New concept..."
-              .value=${newTitle}
-              @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
-              ?disabled=${isGeneratingDescription}
-            ></textarea>
-            <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
-              ${isGeneratingDescription ? "Generating..." : "Add Concept"}
-            </button>
           </div>
 
           ${rejectedConcepts.length > 0

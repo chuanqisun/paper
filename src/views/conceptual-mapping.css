@@ -36,6 +36,15 @@
   color: white;
 }
 
+.conceptual-actions textarea {
+  min-width: 20ch;
+  flex: 1;
+  padding: var(--spacing-unit);
+  border: 1px solid #ccc;
+  resize: none;
+  field-sizing: content;
+}
+
 .concepts-list {
   display: flex;
   flex-direction: column;
