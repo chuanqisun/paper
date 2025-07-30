@@ -7,6 +7,8 @@ When you are done addressing the item, you must move it from the `#TODO` list to
 
 - isGenerating is prematurely flipped to false
 - Fix concurrent rendering issue
+- Allow user to paste images or upload files to moodboard
+- Allow user to type in artifact into the moodboard
 
 # DONE
 
