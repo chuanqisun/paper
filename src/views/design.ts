@@ -534,13 +534,20 @@ export function fitView(
                                             <summary>Rejected mockups (${designRejectedMockups.length})</summary>
                                             <div class="rejected-list">
                                               <div class="rejected-list-header">
-                                                <button class="small" @click=${() => clearAllRejectedMockups$.next()}>Clear all</button>
+                                                <button class="small" @click=${() => clearAllRejectedMockups$.next()}>
+                                                  Clear all
+                                                </button>
                                               </div>
                                               ${designRejectedMockups.map(
                                                 (mockup) => html`
                                                   <div class="rejected-item">
                                                     <span>${mockup.name}</span>
-                                                    <button class="small" @click=${() => revertMockupRejection$.next(mockup.id)}>Restore</button>
+                                                    <button
+                                                      class="small"
+                                                      @click=${() => revertMockupRejection$.next(mockup.id)}
+                                                    >
+                                                      Restore
+                                                    </button>
                                                   </div>
                                                 `,
                                               )}
