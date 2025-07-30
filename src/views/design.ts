@@ -293,11 +293,6 @@ export function fitView(
             }),
           );
         }),
-        tap(() => {
-          const currentRendering = renderingDesigns$.value;
-          currentRendering.delete(designId);
-          renderingDesigns$.next(new Set(currentRendering));
-        }),
       ),
     ),
   );
