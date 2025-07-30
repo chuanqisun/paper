@@ -104,6 +104,8 @@ export function regenerateDescription$(params: {
   existingConcepts?: Concept[];
 }): Observable<string> {
   return new Observable<string>((subscriber) => {
+    const abortController = new AbortController();
+
     const openai = new OpenAI({
       dangerouslyAllowBrowser: true,
       apiKey: params.apiKey,
@@ -111,20 +113,25 @@ export function regenerateDescription$(params: {
 
     (async () => {
       try {
-        const response = await openai.responses.create({
-          model: "gpt-4.1",
-          input: [
-            { role: "developer", content: "Write a short one-sentence description for the provided concept." },
+        const response = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: [
+              { role: "developer", content: "Write a short one-sentence description for the provided concept." },
 
-            // Few-shot examples using existing concepts
-            ...(params.existingConcepts ?? []).flatMap((example) => [
-              { role: "user" as const, content: example.concept },
-              { role: "assistant" as const, content: example.description },
-            ]),
+              // Few-shot examples using existing concepts
+              ...(params.existingConcepts ?? []).flatMap((example) => [
+                { role: "user" as const, content: example.concept },
+                { role: "assistant" as const, content: example.description },
+              ]),
 
-            { role: "user", content: params.concept },
-          ],
-        });
+              { role: "user", content: params.concept },
+            ],
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
 
         const message = response.output[0];
         if (message?.type === "message" && "content" in message) {
@@ -138,5 +145,9 @@ export function regenerateDescription$(params: {
         subscriber.error(error);
       }
     })();
+
+    return () => {
+      abortController.abort();
+    };
   });
 }

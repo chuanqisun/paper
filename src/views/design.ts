@@ -268,7 +268,7 @@ export function fitView(
             rejectedMockups,
             apiKey,
           }).pipe(
-            takeUntil(stopRender$.pipe(map(stopDesignId => stopDesignId === designId))),
+            takeUntil(stopRender$.pipe(map((stopDesignId) => stopDesignId === designId))),
             map(
               (mockup) =>
                 ({
@@ -433,8 +433,8 @@ export function fitView(
                           )}
                         </div>
                         <menu>
-                          <button 
-                            class="small" 
+                          <button
+                            class="small"
                             @click=${() => {
                               if (renderingDesigns.has(design.id)) {
                                 stopRender$.next(design.id);
