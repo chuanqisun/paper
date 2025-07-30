@@ -1,10 +1,16 @@
 import { html, render } from "lit-html";
-import { combineLatest, EMPTY, of, Subject } from "rxjs";
+import { combineLatest, of, Subject } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
 import { generateImage, type FluxConnection } from "../lib/generate-image";
 import "./generative-image.css";
 
 type Status = "empty" | "loading" | "error" | "success";
+
+interface ImageState {
+  status: Status;
+  imageUrl: string;
+  altText: string;
+}
 
 export class FluxImageElement extends HTMLElement {
   static getConnection: () => FluxConnection;
@@ -18,9 +24,6 @@ export class FluxImageElement extends HTMLElement {
   }
 
   private render$ = new Subject<void>();
-  private status: Status = "empty";
-  private currentImageUrl = "";
-  private errorMessage = "";
 
   connectedCallback() {
     this.setupReactivity();
@@ -47,91 +50,85 @@ export class FluxImageElement extends HTMLElement {
       ),
     );
 
-    const imageGeneration$ = attributes$.pipe(
+    const imageState$ = attributes$.pipe(
       switchMap((attrs) => {
         if (!attrs.prompt.trim()) {
-          this.updateStatus("empty");
-          return of(null);
+          return of({
+            status: "empty" as Status,
+            imageUrl: this.getPlaceholderUrl(attrs),
+            altText: "Enter a prompt to generate an image",
+          });
         }
 
-        this.updateStatus("loading");
+        const loadingState: ImageState = {
+          status: "loading",
+          imageUrl: this.getPlaceholderUrl(attrs),
+          altText: "Generating image...",
+        };
 
         try {
           const connection = FluxImageElement.getConnection();
-          return generateImage(connection, {
-            prompt: attrs.prompt,
-            width: attrs.width,
-            height: attrs.height,
-            model: attrs.model,
-          }).pipe(
-            tap((result) => {
-              this.currentImageUrl = result.url;
-              this.updateStatus("success");
-            }),
-            catchError((error) => {
-              this.errorMessage = error.message || "Failed to generate image";
-              this.updateStatus("error");
-              return EMPTY;
-            }),
+          return of(loadingState).pipe(
+            switchMap(() =>
+              generateImage(connection, {
+                prompt: attrs.prompt,
+                width: attrs.width,
+                height: attrs.height,
+                model: attrs.model,
+              }).pipe(
+                map((result) => ({
+                  status: "success" as Status,
+                  imageUrl: result.url,
+                  altText: attrs.prompt || "Generated image",
+                })),
+                catchError((error) =>
+                  of({
+                    status: "error" as Status,
+                    imageUrl: this.getErrorUrl(attrs),
+                    altText: error.message || "Failed to generate image",
+                  }),
+                ),
+              ),
+            ),
           );
         } catch (error) {
-          this.errorMessage = error instanceof Error ? error.message : "Failed to generate image";
-          this.updateStatus("error");
-          return of(null);
+          return of({
+            status: "error" as Status,
+            imageUrl: this.getErrorUrl(attrs),
+            altText: error instanceof Error ? error.message : "Failed to generate image",
+          });
         }
       }),
+      tap((state) => this.setAttribute("status", state.status)),
     );
 
-    const template$ = combineLatest([attributes$, imageGeneration$]).pipe(map(([attrs]) => this.renderTemplate(attrs)));
+    const template$ = combineLatest([attributes$, imageState$]).pipe(
+      map(([attrs, state]) => this.renderTemplate(attrs, state)),
+    );
 
     template$.subscribe((template) => {
       render(template, this);
     });
   }
 
-  private updateStatus(status: Status) {
-    this.status = status;
-    this.setAttribute("status", status);
+  private getPlaceholderUrl(attrs: { width: number; height: number; placeholderSrc: string }) {
+    return attrs.placeholderSrc || `https://placehold.co/${attrs.width}x${attrs.height}`;
   }
 
-  private getImageSrc(attrs: { prompt: string; width: number; height: number; placeholderSrc: string }) {
-    if (this.status === "success" && this.currentImageUrl) {
-      return this.currentImageUrl;
-    }
-
-    if (this.status === "error") {
-      return "https://placehold.co/400x400/FFF/666?text=Error";
-    }
-
-    if (attrs.placeholderSrc) {
-      return attrs.placeholderSrc;
-    }
-
-    return `https://placehold.co/${attrs.width}x${attrs.height}`;
+  private getErrorUrl(attrs: { width: number; height: number }) {
+    return `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?text=Error&font=source-sans-pro`;
   }
 
-  private getAltText(attrs: { prompt: string }) {
-    if (this.status === "success") {
-      return attrs.prompt || "Generated image";
-    }
-
-    if (this.status === "error") {
-      return this.errorMessage || "Error generating image";
-    }
-
-    return "Loading image...";
-  }
-
-  private renderTemplate(attrs: {
-    prompt: string;
-    width: number;
-    height: number;
-    placeholderSrc: string;
-    model: string;
-  }) {
-    const imageSrc = this.getImageSrc(attrs);
-    const altText = this.getAltText(attrs);
-
-    return html`<img src="${imageSrc}" alt="${altText}" title="${altText}" loading="lazy" />`;
+  private renderTemplate(
+    _attrs: {
+      prompt: string;
+      width: number;
+      height: number;
+      placeholderSrc: string;
+      model: string;
+    },
+    state: ImageState,
+  ) {
+    return html`<img src="${state.imageUrl}" alt="${state.altText}" title="${state.altText}" loading="lazy" />`;
   }
 }
