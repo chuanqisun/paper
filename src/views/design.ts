@@ -46,7 +46,7 @@ export function fitView(
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const mockups$ = new BehaviorSubject<MockupWithId[]>([]);
   const rejectedMockups$ = new BehaviorSubject<string[]>([]);
-  const isGeneratingMockups$ = new BehaviorSubject<boolean>(false);
+  const renderingDesigns$ = new BehaviorSubject<Set<string>>(new Set());
   const editingMockups$ = new BehaviorSubject<string[]>([]);
 
   // Actions
@@ -213,7 +213,10 @@ export function fitView(
 
   // Render mockups effect
   const renderMockupsEffect$ = renderMockups$.pipe(
-    tap(() => isGeneratingMockups$.next(true)),
+    tap((designId) => {
+      const currentRendering = renderingDesigns$.value;
+      renderingDesigns$.next(new Set([...currentRendering, designId]));
+    }),
     switchMap((designId) =>
       combineLatest([apiKeys$, domain$]).pipe(
         take(1),
@@ -221,23 +224,30 @@ export function fitView(
           apiKey: apiKeys.openai,
           domain,
           design: designs$.value.find((d) => d.id === designId),
+          designId,
         })),
-        switchMap(({ apiKey, domain, design }) => {
+        switchMap(({ apiKey, domain, design, designId }) => {
           if (!apiKey) {
             console.error("OpenAI API key not available");
-            isGeneratingMockups$.next(false);
+            const currentRendering = renderingDesigns$.value;
+            currentRendering.delete(designId);
+            renderingDesigns$.next(new Set(currentRendering));
             return of();
           }
 
           if (!design) {
             console.error("Design not found");
-            isGeneratingMockups$.next(false);
+            const currentRendering = renderingDesigns$.value;
+            currentRendering.delete(designId);
+            renderingDesigns$.next(new Set(currentRendering));
             return of();
           }
 
           if (!domain) {
             console.error("Domain not found");
-            isGeneratingMockups$.next(false);
+            const currentRendering = renderingDesigns$.value;
+            currentRendering.delete(designId);
+            renderingDesigns$.next(new Set(currentRendering));
             return of();
           }
 
@@ -270,9 +280,13 @@ export function fitView(
             }),
           );
         }),
+        tap(() => {
+          const currentRendering = renderingDesigns$.value;
+          currentRendering.delete(designId);
+          renderingDesigns$.next(new Set(currentRendering));
+        }),
       ),
     ),
-    tap(() => isGeneratingMockups$.next(false)),
   );
 
   // Edit mockup effect
@@ -353,11 +367,11 @@ export function fitView(
     isGenerating$,
     mockups$,
     rejectedMockups$,
-    isGeneratingMockups$,
+    renderingDesigns$,
     editingMockups$,
   ]).pipe(
     map(
-      ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, isGeneratingMockups, editingMockups]) => html`
+      ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, renderingDesigns, editingMockups]) => html`
         <div class="design">
           <p>Generate design concepts by assigning concrete values to parameters</p>
 
@@ -400,7 +414,9 @@ export function fitView(
                           )}
                         </div>
                         <menu>
-                          <button class="small" @click=${() => renderMockups$.next(design.id)}>Render</button>
+                          <button class="small" @click=${() => renderMockups$.next(design.id)}>
+                            ${renderingDesigns.has(design.id) ? "Rendering..." : "Render"}
+                          </button>
                           ${design.pinned
                             ? html`
                                 <button class="small" @click=${() => pinDesign$.next(design.id)}>✅ Pinned</button>
@@ -412,13 +428,9 @@ export function fitView(
                         </menu>
                         ${(() => {
                           const designMockups = mockups.filter((m) => m.designId === design.id);
-                          const isGeneratingForThisDesign = isGeneratingMockups; // You might want to track per-design loading
-                          return designMockups.length > 0 || isGeneratingForThisDesign
+                          return designMockups.length > 0
                             ? html`
                                 <div class="design-mockups">
-                                  ${isGeneratingForThisDesign
-                                    ? html`<div class="loading">Generating mockups...</div>`
-                                    : ""}
                                   ${designMockups.length > 0
                                     ? html`
                                         <div class="mockups-grid">
