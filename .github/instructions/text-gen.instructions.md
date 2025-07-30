@@ -1,31 +1,8 @@
 ---
-applyTo: "**"
+applyTo: "src/lib/**/*.ts"
 ---
 
-# System Architecture
-
-A pipeline for mood board based prodcut designs generation.
-
-## Workflow
-
-A Human-AI co-iterative loop. Non-linear progression. End with product requirements documentation (PRD)
-
-| Step          | Human                     | AI                                                     |
-| ------------- | ------------------------- | ------------------------------------------------------ |
-| Parti         | Write down one "big idea" | Suggest alternatives                                   |
-| Conceptualize | Explore related concepts  | Suggest and define concepts                            |
-| Visualize     | Steer AI with preference  | Generate artifacts while adhering to latest preference |
-| Parameterize  | Provide domain knowledge  | Suggest aspects of product decision making             |
-| Design        | Steer AI with preference  | Assign values to produce design decisions              |
-
-## Flow control
-
-- Make sure each step only responds to explicit user action within the step
-
-## Model access
-
-- Use OpenAI SDK response API for text gen
-- Use Together.ai for image gen
+# LLM Text Generation
 
 ## OpenAI SDK docs
 
