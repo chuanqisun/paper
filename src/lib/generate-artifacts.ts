@@ -100,3 +100,143 @@ Respond in this JSON format:
     })();
   });
 }
+
+export function regenerateArtifactDescription$(params: {
+  artifactName: string;
+  apiKey: string;
+  existingArtifacts?: Artifact[];
+}): Observable<string> {
+  return new Observable<string>((subscriber) => {
+    const abortController = new AbortController();
+
+    const openai = new OpenAI({
+      dangerouslyAllowBrowser: true,
+      apiKey: params.apiKey,
+    });
+
+    (async () => {
+      try {
+        const response = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: [
+              {
+                role: "developer",
+                content:
+                  "Generate a detailed description for a moodboard artifact. The description should be one detailed sentence including subject, scene, and style for AI image generation. The artifact should be grounded in the real world and human's lived experience.",
+              },
+
+              // Few-shot examples using existing artifacts
+              ...(params.existingArtifacts ?? []).flatMap((example) => [
+                { role: "user" as const, content: example.name },
+                { role: "assistant" as const, content: example.description },
+              ]),
+
+              { role: "user", content: params.artifactName },
+            ],
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
+
+        const message = response.output[0];
+        if (message?.type === "message" && "content" in message) {
+          const content = message.content?.[0];
+          if (content?.type === "output_text") {
+            subscriber.next(content.text.trim());
+          }
+        }
+        subscriber.complete();
+      } catch (error) {
+        subscriber.error(error);
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  });
+}
+
+export function generateArtifactFromImage$(params: {
+  imageBase64: string;
+  apiKey: string;
+  existingArtifacts?: Artifact[];
+}): Observable<Artifact> {
+  return new Observable<Artifact>((subscriber) => {
+    const abortController = new AbortController();
+
+    const openai = new OpenAI({
+      dangerouslyAllowBrowser: true,
+      apiKey: params.apiKey,
+    });
+
+    (async () => {
+      try {
+        const existingContext = params.existingArtifacts?.length
+          ? `\n\nFor consistency, here are examples of existing artifacts:\n${params.existingArtifacts
+              .map((a) => `- ${a.name}: ${a.description}`)
+              .join("\n")}`
+          : "";
+
+        const response = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: `Analyze this image and generate a moodboard artifact entry for it. 
+
+Generate a name and description following these guidelines:
+- Name should be very short (one word or short phrase)
+- Description should be one detailed sentence including subject, scene, and style for AI image generation
+- The artifact should be grounded in the real world and human's lived experience${existingContext}
+
+Image: data:image/jpeg;base64,${params.imageBase64}
+
+Respond in this JSON format:
+{
+  "name": "string",
+  "description": "string"
+}`,
+            text: { format: { type: "json_object" } },
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
+
+        const message = response.output[0];
+        if (message?.type === "message" && "content" in message) {
+          const content = message.content?.[0];
+          if (content?.type === "output_text") {
+            try {
+              const parsed = JSON.parse(content.text.trim()) as Artifact;
+              if (parsed.name && parsed.description) {
+                subscriber.next(parsed);
+              } else {
+                subscriber.error(new Error("Invalid artifact format in response"));
+              }
+            } catch (parseError) {
+              subscriber.error(new Error("Failed to parse JSON response"));
+            }
+          }
+        }
+        subscriber.complete();
+      } catch (error) {
+        subscriber.error(error);
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  });
+}
+
+export async function fileToDataUrl(file: File): Promise<string> {
+  const reader = new FileReader();
+  return new Promise<string>((resolve, reject) => {
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
