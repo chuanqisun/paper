@@ -466,7 +466,11 @@ export function fitView(
                                           ${designMockups.map(
                                             (mockup) => html`
                                               <div class="media-card ${mockup.pinned ? "pinned" : ""}">
-                                                <div class="card-edit-area ${editingMockups.includes(mockup.id) ? "" : "hidden"}">
+                                                <div
+                                                  class="card-edit-area ${editingMockups.includes(mockup.id)
+                                                    ? ""
+                                                    : "hidden"}"
+                                                >
                                                   <textarea
                                                     class="card-edit-textarea"
                                                     .value=${mockup.description}
@@ -479,7 +483,9 @@ export function fitView(
                                                   ></textarea>
                                                 </div>
                                                 <generative-image
-                                                  class="card-image ${editingMockups.includes(mockup.id) ? "hidden" : ""}"
+                                                  class="card-image ${editingMockups.includes(mockup.id)
+                                                    ? "hidden"
+                                                    : ""}"
                                                   prompt="${mockup.description}"
                                                   width="400"
                                                   height="400"

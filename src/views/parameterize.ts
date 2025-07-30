@@ -300,40 +300,41 @@ export function parameterizeView(
                 </div>
               `
             : ""}
-
-          <menu>
-            <button
-              @click=${() => {
-                if (isGenerating) {
-                  stopGeneration$.next();
-                } else {
-                  generateParameters$.next();
-                }
-              }}
-            >
-              ${isGenerating ? "Stop generating" : "Generate Parameters"}
-            </button>
-            ${parameters.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
-            <textarea
-              rows="1"
-              placeholder="New parameter..."
-              .value=${newParameterName}
-              @input=${(e: Event) => newParameterName$.next((e.target as HTMLTextAreaElement).value)}
-              ?disabled=${isGeneratingDescription || !domain.trim()}
-            ></textarea>
-            <button
-              @click=${() => {
-                if (isGeneratingDescription) {
-                  stopAddingParameter$.next();
-                } else {
-                  addManualParameter$.next();
-                }
-              }}
-              ?disabled=${(!newParameterName.trim() && !isGeneratingDescription) || !domain.trim()}
-            >
-              ${isGeneratingDescription ? "Stop adding" : "Add Parameter"}
-            </button>
-          </menu>
+          ${domain
+            ? html`<menu>
+                <button
+                  @click=${() => {
+                    if (isGenerating) {
+                      stopGeneration$.next();
+                    } else {
+                      generateParameters$.next();
+                    }
+                  }}
+                >
+                  ${isGenerating ? "Stop generating" : "Generate Parameters"}
+                </button>
+                ${parameters.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+                <textarea
+                  rows="1"
+                  placeholder="New parameter..."
+                  .value=${newParameterName}
+                  @input=${(e: Event) => newParameterName$.next((e.target as HTMLTextAreaElement).value)}
+                  ?disabled=${isGeneratingDescription || !domain.trim()}
+                ></textarea>
+                <button
+                  @click=${() => {
+                    if (isGeneratingDescription) {
+                      stopAddingParameter$.next();
+                    } else {
+                      addManualParameter$.next();
+                    }
+                  }}
+                  ?disabled=${(!newParameterName.trim() && !isGeneratingDescription) || !domain.trim()}
+                >
+                  ${isGeneratingDescription ? "Stop adding" : "Add Parameter"}
+                </button>
+              </menu>`
+            : null}
           ${rejectedParameters.length > 0
             ? html`
                 <div class="rejected-parameters">
