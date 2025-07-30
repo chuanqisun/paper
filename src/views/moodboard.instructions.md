@@ -29,6 +29,7 @@ Text-to-image generation happens automatically within the generative-image web c
 ## User control
 
 A button to Generate Artifacts (image descriptions + images)
+A text field with an "Add Artifact" button for manual artifact entry. The text field also functions as a paste target for images.
 For each artifact, user can see the text description as well as the image.
 For each artifact, user can Accept or Reject it, similar to the concept generation workflow
 
@@ -37,3 +38,15 @@ For each artifact, user can Accept or Reject it, similar to the concept generati
 Display artifacts as cards in a grid. The cards are like Polaroids with the generative-image component on top and the description below. The generative-image component automatically handles loading states, error states, and displays a placeholder while generating.
 
 Rejected artifacts only show the title with a restore button.
+
+## Manual Artifact Addition
+
+Users can manually add artifacts through a text input field with an "Add Artifact" button. This supports two modes:
+
+1. **Text input**: User types an artifact description directly into the text field. When "Add Artifact" is clicked, the text is used as the artifact description for image generation.
+
+2. **Image paste**: The text field also functions as a paste target. When user pastes an image (Ctrl+V or Cmd+V), the pasted image is directly added as an artifact without going through text-to-image generation. The system should extract or generate a description for the pasted image.
+
+The text field should have placeholder text indicating both functions: "Type artifact description or paste image here..."
+
+Manual artifacts follow the same workflow as generated artifacts - they appear as cards in the grid and can be accepted or rejected.

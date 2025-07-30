@@ -211,13 +211,14 @@ input:focus {
     display: flex;
     flex-direction: column;
     gap: 0.5ch;
+    flex-grow: 1;
   }
 
   .card-content menu {
     padding-inline: 1ch;
   }
 
-  .card:has(.card-edit-area) .card-content {
+  &:has(.card-edit-area) .card-content {
     flex-grow: 0;
   }
 
