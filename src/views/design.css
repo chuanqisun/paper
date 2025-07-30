@@ -36,6 +36,15 @@
     padding: 0 1ch 1ch 1ch;
   }
 
+  .design-mockups .rejected-mockups {
+    margin-top: 1ch;
+  }
+
+  .design-mockups .rejected-mockups summary {
+    cursor: pointer;
+    color: #666;
+  }
+
   .design-card.pinned {
     border-color: black;
     background: #fafafa;

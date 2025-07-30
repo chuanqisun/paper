@@ -46,7 +46,7 @@ export function fitView(
   const rejectedDesigns$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const mockups$ = new BehaviorSubject<MockupWithId[]>([]);
-  const rejectedMockups$ = new BehaviorSubject<string[]>([]);
+  const rejectedMockups$ = new BehaviorSubject<MockupWithId[]>([]);
   const renderingDesigns$ = new BehaviorSubject<Set<string>>(new Set());
   const editingMockups$ = new BehaviorSubject<string[]>([]);
 
@@ -253,7 +253,7 @@ export function fitView(
           }
 
           const existingMockups = mockups$.value.map((m) => m.name);
-          const rejectedMockups = rejectedMockups$.value;
+          const rejectedMockups = rejectedMockups$.value.map((m) => m.name);
 
           return streamMockups$({
             designs: [design],
@@ -313,16 +313,22 @@ export function fitView(
       if (mockup) {
         const mockups = mockups$.value.filter((m) => m.id !== id);
         mockups$.next(mockups);
-        rejectedMockups$.next([...rejectedMockups$.value, mockup.name]);
+        rejectedMockups$.next([...rejectedMockups$.value, mockup]);
       }
     }),
   );
 
   // Revert mockup rejection effect
   const revertMockupRejectionEffect$ = revertMockupRejection$.pipe(
-    tap((rejectedMockup) => {
-      const rejected = rejectedMockups$.value.filter((m) => m !== rejectedMockup);
-      rejectedMockups$.next(rejected);
+    tap((rejectedMockupId) => {
+      const rejectedMockup = rejectedMockups$.value.find((m) => m.id === rejectedMockupId);
+      if (rejectedMockup) {
+        // Remove from rejected list
+        const rejected = rejectedMockups$.value.filter((m) => m.id !== rejectedMockupId);
+        rejectedMockups$.next(rejected);
+        // Add back to active mockups
+        mockups$.next([...mockups$.value, rejectedMockup]);
+      }
     }),
   );
 
@@ -353,7 +359,7 @@ export function fitView(
       const pinnedMockups = currentMockups.filter((m) => m.pinned);
 
       // Add unpinned mockups to rejection list
-      const newRejectedMockups = [...rejectedMockups$.value, ...unpinnedMockups.map((m) => m.name)];
+      const newRejectedMockups = [...rejectedMockups$.value, ...unpinnedMockups];
       rejectedMockups$.next(newRejectedMockups);
 
       // Keep only pinned mockups
@@ -429,7 +435,8 @@ export function fitView(
                         </menu>
                         ${(() => {
                           const designMockups = mockups.filter((m) => m.designId === design.id);
-                          return designMockups.length > 0
+                          const designRejectedMockups = rejectedMockups.filter((m) => m.designId === design.id);
+                          return designMockups.length > 0 || designRejectedMockups.length > 0
                             ? html`
                                 <div class="design-mockups">
                                   ${designMockups.length > 0
@@ -520,6 +527,28 @@ export function fitView(
                                         </div>
                                       `
                                     : ""}
+                                  ${designRejectedMockups.length > 0
+                                    ? html`
+                                        <div class="rejected-mockups">
+                                          <details>
+                                            <summary>Rejected mockups (${designRejectedMockups.length})</summary>
+                                            <div class="rejected-list">
+                                              <div class="rejected-list-header">
+                                                <button class="small" @click=${() => clearAllRejectedMockups$.next()}>Clear all</button>
+                                              </div>
+                                              ${designRejectedMockups.map(
+                                                (mockup) => html`
+                                                  <div class="rejected-item">
+                                                    <span>${mockup.name}</span>
+                                                    <button class="small" @click=${() => revertMockupRejection$.next(mockup.id)}>Restore</button>
+                                                  </div>
+                                                `,
+                                              )}
+                                            </div>
+                                          </details>
+                                        </div>
+                                      `
+                                    : ""}
                                 </div>
                               `
                             : "";
@@ -555,28 +584,6 @@ export function fitView(
                           <div class="rejected-item">
                             <span>${design}</span>
                             <button class="small" @click=${() => revertRejection$.next(design)}>Restore</button>
-                          </div>
-                        `,
-                      )}
-                    </div>
-                  </details>
-                </div>
-              `
-            : ""}
-          ${rejectedMockups.length > 0
-            ? html`
-                <div class="rejected-mockups">
-                  <details>
-                    <summary>Rejected mockups (${rejectedMockups.length})</summary>
-                    <div class="rejected-list">
-                      <div class="rejected-list-header">
-                        <button class="small" @click=${() => clearAllRejectedMockups$.next()}>Clear all</button>
-                      </div>
-                      ${rejectedMockups.map(
-                        (mockup) => html`
-                          <div class="rejected-item">
-                            <span>${mockup}</span>
-                            <button class="small" @click=${() => revertMockupRejection$.next(mockup)}>Restore</button>
                           </div>
                         `,
                       )}
