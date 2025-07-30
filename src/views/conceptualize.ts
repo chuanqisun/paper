@@ -6,10 +6,12 @@ import {
   Subject,
   catchError,
   combineLatest,
+  finalize,
   map,
   merge,
   switchMap,
   take,
+  takeUntil,
   tap,
 } from "rxjs";
 import type { Concept } from "../lib/generate-concepts";
@@ -33,6 +35,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
 
   // Actions
   const generateConcepts$ = new Subject<void>();
+  const stopGeneration$ = new Subject<void>();
   const editConcept$ = new Subject<{ id: string; field: "concept" | "description"; value: string }>();
   const deleteConcept$ = new Subject<string>();
   const favoriteConcept$ = new Subject<string>();
@@ -67,6 +70,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
           const rejectedConcepts = rejectedConcepts$.value;
 
           return streamConcepts$({ parti, existingConcepts, rejectedConcepts, apiKey }).pipe(
+            takeUntil(stopGeneration$),
             map((concept) => ({
               ...concept,
               id: Math.random().toString(36).substr(2, 9),
@@ -79,11 +83,11 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
               console.error("Error generating concepts:", error);
               return EMPTY;
             }),
+            finalize(() => isGenerating$.next(false)),
           );
         }),
       ),
     ),
-    tap(() => isGenerating$.next(false)),
   );
 
   // Edit concept effect
@@ -248,10 +252,14 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
           <menu>
             <button
               @click=${() => {
-                generateConcepts$.next();
+                if (isGenerating) {
+                  stopGeneration$.next();
+                } else {
+                  generateConcepts$.next();
+                }
               }}
             >
-              ${isGenerating ? "Generating..." : "Generate Concepts"}
+              ${isGenerating ? "Stop generating" : "Generate Concepts"}
             </button>
             ${concepts.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
             <textarea

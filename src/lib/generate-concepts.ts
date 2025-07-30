@@ -16,6 +16,8 @@ export interface Concept {
 
 export function streamConcepts$(params: StreamConceptsParams): Observable<Concept> {
   return new Observable<Concept>((subscriber) => {
+    const abortController = new AbortController();
+
     const openai = new OpenAI({
       dangerouslyAllowBrowser: true,
       apiKey: params.apiKey,
@@ -67,12 +69,17 @@ Respond in this JSON format:
 }
         `.trim();
 
-        const responseStream = await openai.responses.create({
-          model: "gpt-4.1",
-          input: prompt,
-          text: { format: { type: "json_object" } },
-          stream: true,
-        });
+        const responseStream = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: prompt,
+            text: { format: { type: "json_object" } },
+            stream: true,
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
 
         for await (const chunk of responseStream) {
           if (chunk.type === "response.output_text.delta") {
@@ -84,6 +91,10 @@ Respond in this JSON format:
         subscriber.error(error);
       }
     })();
+
+    return () => {
+      abortController.abort();
+    };
   });
 }
 
