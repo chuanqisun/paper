@@ -74,11 +74,15 @@
   }
 
   .artifact-content {
-    padding: 1ch;
+    padding: 1ch 0;
     display: flex;
     flex-direction: column;
     gap: 0.5ch;
     flex-grow: 1;
+
+    menu {
+      padding-inline: 1ch;
+    }
   }
 
   .artifact-card:has(.artifact-edit-area) .artifact-content {
@@ -96,14 +100,6 @@
     width: 100%;
     resize: none;
     field-sizing: content;
-  }
-
-  .artifact-actions {
-    display: flex;
-    gap: 0.5ch;
-    margin-top: auto;
-    flex-shrink: 0;
-    justify-content: space-between;
   }
 
   .rejected-artifacts {

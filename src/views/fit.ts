@@ -46,23 +46,11 @@ export function fitView(
   const rejectDesign$ = new Subject<string>();
   const revertRejection$ = new Subject<string>();
   const clearAllRejected$ = new Subject<void>();
+  const pinnedOnly$ = new Subject<void>();
 
   // Generate designs effect
   const generateEffect$ = generateDesigns$.pipe(
-    tap(() => {
-      isGenerating$.next(true);
-
-      // Move unpinned designs to rejected list
-      const currentDesigns = designs$.value;
-      const maybeDesigns = currentDesigns.filter((d) => !d.pinned);
-      const pinnedDesigns = currentDesigns.filter((d) => d.pinned);
-
-      if (maybeDesigns.length > 0) {
-        const rejectedNames = maybeDesigns.map((d) => d.name);
-        rejectedDesigns$.next([...rejectedDesigns$.value, ...rejectedNames]);
-        designs$.next(pinnedDesigns);
-      }
-    }),
+    tap(() => isGenerating$.next(true)),
     switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([apiKeys$, concepts$, artifacts$, parameters$, parti$, domain$]).pipe(
@@ -189,21 +177,28 @@ export function fitView(
     }),
   );
 
+  // Pinned only effect
+  const pinnedOnlyEffect$ = pinnedOnly$.pipe(
+    tap(() => {
+      const currentDesigns = designs$.value;
+      const unpinnedDesigns = currentDesigns.filter((d) => !d.pinned);
+      const pinnedDesigns = currentDesigns.filter((d) => d.pinned);
+
+      // Add unpinned designs to rejection list
+      const newRejectedDesigns = [...rejectedDesigns$.value, ...unpinnedDesigns.map((d) => d.name)];
+      rejectedDesigns$.next(newRejectedDesigns);
+
+      // Keep only pinned designs
+      designs$.next(pinnedDesigns);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([designs$, rejectedDesigns$, isGenerating$]).pipe(
     map(
       ([designs, rejectedDesigns, isGenerating]) => html`
         <div class="fit">
           <p>Generate design specifications by assigning concrete values to parameters</p>
-          <div class="fit-actions">
-            <button
-              @click=${() => {
-                generateDesigns$.next();
-              }}
-            >
-              Generate Designs
-            </button>
-          </div>
 
           ${isGenerating ? html`<div class="loading">Generating designs...</div>` : ""}
           ${designs.length > 0
@@ -227,7 +222,7 @@ export function fitView(
                           ${Object.entries(design.parameterAssignments).map(
                             ([paramName, paramValue]) => html`
                               <div class="parameter-row">
-                                <div class="parameter-name">${paramName}:</div>
+                                <div class="parameter-name">${paramName}</div>
                                 <textarea
                                   class="parameter-value"
                                   rows="1"
@@ -244,7 +239,7 @@ export function fitView(
                             `,
                           )}
                         </div>
-                        <div class="design-actions">
+                        <menu>
                           ${design.pinned
                             ? html`
                                 <button class="small" @click=${() => pinDesign$.next(design.id)}>✅ Pinned</button>
@@ -253,13 +248,24 @@ export function fitView(
                                 <button class="small" @click=${() => pinDesign$.next(design.id)}>Pin</button>
                                 <button class="small" @click=${() => rejectDesign$.next(design.id)}>Reject</button>
                               `}
-                        </div>
+                        </menu>
                       </div>
                     `,
                   )}
                 </div>
               `
             : ""}
+
+          <menu>
+            <button
+              @click=${() => {
+                generateDesigns$.next();
+              }}
+            >
+              ${isGenerating ? "Generating..." : "Generate Designs"}
+            </button>
+            ${designs.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+          </menu>
           ${rejectedDesigns.length > 0
             ? html`
                 <div class="rejected-designs">
@@ -295,6 +301,7 @@ export function fitView(
     rejectEffect$,
     revertEffect$,
     clearAllRejectedEffect$,
+    pinnedOnlyEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;

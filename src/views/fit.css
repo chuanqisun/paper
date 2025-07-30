@@ -13,12 +13,6 @@
     padding-left: 2ch;
   }
 
-  .fit-actions {
-    display: flex;
-    gap: 1ch;
-    flex-wrap: wrap;
-  }
-
   .designs-grid {
     display: flex;
     flex-direction: column;
@@ -30,7 +24,12 @@
     flex-direction: column;
     border: 1px solid #eee;
     background: white;
-    padding: 1ch;
+    padding: 1ch 0;
+    gap: 1ch;
+
+    menu {
+      padding-inline: 1ch;
+    }
   }
 
   .design-card.pinned {
@@ -40,7 +39,6 @@
 
   .design-name {
     font-weight: bold;
-    margin-bottom: 1ch;
     font-family: inherit;
     font-size: inherit;
     border: none;
@@ -54,7 +52,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5ch;
-    margin-bottom: 1ch;
+    padding: 0 1ch;
   }
 
   .parameter-row {
@@ -67,6 +65,7 @@
   .parameter-name {
     color: #666;
     font-weight: normal;
+    padding-block: var(--spacing-unit);
   }
 
   .parameter-value {
@@ -77,12 +76,6 @@
     width: 100%;
     resize: none;
     field-sizing: content;
-  }
-
-  .design-actions {
-    display: flex;
-    gap: 0.5ch;
-    justify-content: flex-start;
   }
 
   .rejected-designs {

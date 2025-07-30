@@ -31,23 +31,11 @@ export function visualizeView(
   const revertRejection$ = new Subject<string>();
   const clearAllRejected$ = new Subject<void>();
   const toggleEdit$ = new Subject<string>();
+  const pinnedOnly$ = new Subject<void>();
 
   // Generate artifacts effect
   const generateEffect$ = generateArtifacts$.pipe(
-    tap(() => {
-      isGenerating$.next(true);
-
-      // Move unaccepted artifacts to rejected list
-      const currentArtifacts = artifacts$.value;
-      const maybeArtifacts = currentArtifacts.filter((a) => !a.pinned);
-      const pinnedArtifacts = currentArtifacts.filter((a) => a.pinned);
-
-      if (maybeArtifacts.length > 0) {
-        const newRejectedArtifacts = maybeArtifacts.map((a) => a.name);
-        rejectedArtifacts$.next([...rejectedArtifacts$.value, ...newRejectedArtifacts]);
-        artifacts$.next(pinnedArtifacts);
-      }
-    }),
+    tap(() => isGenerating$.next(true)),
     switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([apiKeys$, concepts$, parti$]).pipe(
@@ -154,23 +142,29 @@ export function visualizeView(
     }),
   );
 
+  // Pinned only effect
+  const pinnedOnlyEffect$ = pinnedOnly$.pipe(
+    tap(() => {
+      const currentArtifacts = artifacts$.value;
+      const unpinnedArtifacts = currentArtifacts.filter((a) => !a.pinned);
+      const pinnedArtifacts = currentArtifacts.filter((a) => a.pinned);
+
+      // Add unpinned artifacts to rejection list
+      const newRejectedArtifacts = [...rejectedArtifacts$.value, ...unpinnedArtifacts.map((a) => a.name)];
+      rejectedArtifacts$.next(newRejectedArtifacts);
+
+      // Keep only pinned artifacts
+      artifacts$.next(pinnedArtifacts);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, editingArtifacts$]).pipe(
     map(
       ([artifacts, rejectedArtifacts, isGenerating, editingArtifacts]) => html`
         <div class="visualize">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
-          <div class="visualize-actions">
-            <button
-              @click=${() => {
-                generateArtifacts$.next();
-              }}
-            >
-              Generate Artifacts
-            </button>
-          </div>
 
-          ${isGenerating ? html`<div class="loading">Generating artifacts...</div>` : ""}
           ${artifacts.length > 0
             ? html`
                 <div class="artifacts-grid">
@@ -212,7 +206,7 @@ export function visualizeView(
                                 value: (e.target as HTMLTextAreaElement).value,
                               })}
                           ></textarea>
-                          <div class="artifact-actions">
+                          <menu>
                             ${editingArtifacts.includes(artifact.id)
                               ? html`
                                   <button class="small" @click=${() => toggleEdit$.next(artifact.id)}>Done</button>
@@ -230,7 +224,7 @@ export function visualizeView(
                                       Reject
                                     </button>
                                   `}
-                          </div>
+                          </menu>
                         </div>
                       </div>
                     `,
@@ -238,6 +232,17 @@ export function visualizeView(
                 </div>
               `
             : ""}
+
+          <menu>
+            <button
+              @click=${() => {
+                generateArtifacts$.next();
+              }}
+            >
+              ${isGenerating ? "Generating..." : "Generate Artifacts"}
+            </button>
+            ${artifacts.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+          </menu>
           ${rejectedArtifacts.length > 0
             ? html`
                 <div class="rejected-artifacts">
@@ -274,6 +279,7 @@ export function visualizeView(
     revertEffect$,
     clearAllRejectedEffect$,
     toggleEditEffect$,
+    pinnedOnlyEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;

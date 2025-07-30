@@ -253,7 +253,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
             >
               ${isGenerating ? "Generating..." : "Generate Concepts"}
             </button>
-            <button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>
+            ${concepts.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
             <textarea
               rows="1"
               placeholder="New concept..."

@@ -48,27 +48,14 @@ export function parameterizeView(
   const clearAllRejected$ = new Subject<void>();
   const updateDomain$ = new Subject<string>();
   const addManualParameter$ = new Subject<void>();
+  const pinnedOnly$ = new Subject<void>();
 
   // Update domain effect
   const updateDomainEffect$ = updateDomain$.pipe(tap((domain) => domain$.next(domain)));
 
   // Generate parameters effect
   const generateEffect$ = generateParameters$.pipe(
-    tap(() => {
-      isGenerating$.next(true);
-
-      // Move unpinned parameters to rejected list
-      const currentParameters = parameters$.value;
-      const maybeParameters = currentParameters.filter((p) => !p.pinned);
-      const pinnedParameters = currentParameters.filter((p) => p.pinned);
-
-      if (maybeParameters.length > 0) {
-        const newRejected = [...rejectedParameters$.value, ...maybeParameters.map((p) => p.name)];
-        rejectedParameters$.next(newRejected);
-      }
-
-      parameters$.next(pinnedParameters);
-    }),
+    tap(() => isGenerating$.next(true)),
     switchMap(() =>
       // Take current values at the moment the user action is triggered, not reactive to future changes
       combineLatest([apiKeys$, concepts$, artifacts$, parti$, domain$]).pipe(
@@ -221,28 +208,34 @@ export function parameterizeView(
     ),
   );
 
+  // Pinned only effect
+  const pinnedOnlyEffect$ = pinnedOnly$.pipe(
+    tap(() => {
+      const currentParameters = parameters$.value;
+      const unpinnedParameters = currentParameters.filter((p) => !p.pinned);
+      const pinnedParameters = currentParameters.filter((p) => p.pinned);
+
+      // Add unpinned parameters to rejection list
+      const newRejectedParameters = [...rejectedParameters$.value, ...unpinnedParameters.map((p) => p.name)];
+      rejectedParameters$.next(newRejectedParameters);
+
+      // Keep only pinned parameters
+      parameters$.next(pinnedParameters);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([
     parameters$,
     rejectedParameters$,
     isGenerating$,
-    concepts$,
-    artifacts$,
+
     domain$,
     newParameterName$,
     isGeneratingDescription$,
   ]).pipe(
     map(
-      ([
-        parameters,
-        rejectedParameters,
-        isGenerating,
-        concepts,
-        ,
-        domain,
-        newParameterName,
-        isGeneratingDescription,
-      ]) => html`
+      ([parameters, rejectedParameters, isGenerating, domain, newParameterName, isGeneratingDescription]) => html`
         <div class="parameterize">
           <div class="domain-input">
             <label for="domain">Constrain design to parameters specific to a domain</label>
@@ -255,31 +248,6 @@ export function parameterizeView(
             />
           </div>
 
-          <div class="parameterize-actions">
-            <button
-              @click=${() => {
-                generateParameters$.next();
-              }}
-              ?disabled=${!domain.trim() || concepts.length === 0}
-            >
-              Generate Parameters
-            </button>
-            <textarea
-              rows="1"
-              placeholder="New parameter..."
-              .value=${newParameterName}
-              @input=${(e: Event) => newParameterName$.next((e.target as HTMLTextAreaElement).value)}
-              ?disabled=${isGeneratingDescription || !domain.trim()}
-            ></textarea>
-            <button
-              @click=${() => addManualParameter$.next()}
-              ?disabled=${isGeneratingDescription || !newParameterName.trim() || !domain.trim()}
-            >
-              ${isGeneratingDescription ? "Generating..." : "Add Parameter"}
-            </button>
-          </div>
-
-          ${isGenerating ? html`<div class="loading">Generating parameters...</div>` : ""}
           ${parameters.length > 0
             ? html`
                 <div class="parameters-list">
@@ -307,7 +275,7 @@ export function parameterizeView(
                               value: (e.target as HTMLTextAreaElement).value,
                             })}
                         ></textarea>
-                        <div class="parameter-actions">
+                        <menu>
                           ${parameter.pinned
                             ? html`<button class="small" @click=${() => pinParameter$.next(parameter.id)}>
                                 ✅ Pinned
@@ -318,13 +286,37 @@ export function parameterizeView(
                                   Reject
                                 </button>
                               `}
-                        </div>
+                        </menu>
                       </div>
                     `,
                   )}
                 </div>
               `
             : ""}
+
+          <menu>
+            <button
+              @click=${() => {
+                generateParameters$.next();
+              }}
+            >
+              ${isGenerating ? "Generating..." : "Generate Parameters"}
+            </button>
+            ${parameters.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+            <textarea
+              rows="1"
+              placeholder="New parameter..."
+              .value=${newParameterName}
+              @input=${(e: Event) => newParameterName$.next((e.target as HTMLTextAreaElement).value)}
+              ?disabled=${isGeneratingDescription || !domain.trim()}
+            ></textarea>
+            <button
+              @click=${() => addManualParameter$.next()}
+              ?disabled=${isGeneratingDescription || !newParameterName.trim() || !domain.trim()}
+            >
+              ${isGeneratingDescription ? "Generating..." : "Add Parameter"}
+            </button>
+          </menu>
           ${rejectedParameters.length > 0
             ? html`
                 <div class="rejected-parameters">
@@ -362,6 +354,7 @@ export function parameterizeView(
     clearAllRejectedEffect$,
     updateDomainEffect$,
     addManualEffect$,
+    pinnedOnlyEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;

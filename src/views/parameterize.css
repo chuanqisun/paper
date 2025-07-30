@@ -20,17 +20,6 @@
     margin-bottom: 2ch;
   }
 
-  .parameterize-actions {
-    display: flex;
-    gap: 1ch;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .parameterize-actions textarea {
-    flex: 1;
-  }
-
   .parameters-list {
     display: flex;
     flex-direction: column;
@@ -42,8 +31,12 @@
     flex-direction: column;
     border: 1px solid #eee;
     background: white;
-    padding: 1ch;
+    padding: 1ch 0;
     gap: 0.5ch;
+
+    menu {
+      padding-inline: 1ch;
+    }
   }
 
   .parameter-card.pinned {
@@ -74,14 +67,6 @@
     resize: none;
     field-sizing: content;
     min-height: 2lh;
-  }
-
-  .parameter-actions {
-    display: flex;
-    gap: 0.5ch;
-    margin-top: auto;
-    flex-shrink: 0;
-    justify-content: flex-start;
   }
 
   .rejected-parameters {
