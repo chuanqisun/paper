@@ -5,6 +5,7 @@ import {
   combineLatest,
   map,
   merge,
+  mergeMap,
   Observable,
   of,
   Subject,
@@ -217,7 +218,7 @@ export function fitView(
       const currentRendering = renderingDesigns$.value;
       renderingDesigns$.next(new Set([...currentRendering, designId]));
     }),
-    switchMap((designId) =>
+    mergeMap((designId) =>
       combineLatest([apiKeys$, domain$]).pipe(
         take(1),
         map(([apiKeys, domain]) => ({
