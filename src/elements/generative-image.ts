@@ -42,7 +42,7 @@ export class FluxImageElement extends HTMLElement {
         prompt: this.getAttribute("prompt") ?? "",
         width: parseInt(this.getAttribute("width") ?? "400"),
         height: parseInt(this.getAttribute("height") ?? "400"),
-        placeholderSrc: this.getAttribute("placeholderSrc") ?? "https://placehold.co/400x400",
+        placeholderSrc: this.getAttribute("placeholderSrc"),
         model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell-free",
       })),
       distinctUntilChanged(
@@ -102,7 +102,7 @@ export class FluxImageElement extends HTMLElement {
     );
 
     const template$ = combineLatest([attributes$, imageState$]).pipe(
-      map(([attrs, state]) => this.renderTemplate(attrs, state)),
+      map(([_attrs, state]) => this.renderTemplate(state)),
     );
 
     template$.subscribe((template) => {
@@ -110,8 +110,8 @@ export class FluxImageElement extends HTMLElement {
     });
   }
 
-  private getPlaceholderUrl(attrs: { width: number; height: number; placeholderSrc: string }) {
-    return attrs.placeholderSrc || `https://placehold.co/${attrs.width}x${attrs.height}`;
+  private getPlaceholderUrl(attrs: { width: number; height: number; placeholderSrc?: string | null }) {
+    return attrs.placeholderSrc ?? `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?font=source-sans-pro`;
   }
 
   private getErrorUrl(attrs: { width: number; height: number }) {
@@ -119,19 +119,10 @@ export class FluxImageElement extends HTMLElement {
   }
 
   private getGeneratingUrl(attrs: { width: number; height: number }) {
-    return `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?text=Generating&font=source-sans-pro`;
+    return `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?font=source-sans-pro`;
   }
 
-  private renderTemplate(
-    _attrs: {
-      prompt: string;
-      width: number;
-      height: number;
-      placeholderSrc: string;
-      model: string;
-    },
-    state: ImageState,
-  ) {
+  private renderTemplate(state: ImageState) {
     return html`<img src="${state.imageUrl}" alt="${state.altText}" title="${state.altText}" loading="lazy" />`;
   }
 }
