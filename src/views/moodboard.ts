@@ -298,30 +298,25 @@ export function moodboardView(
                   ${artifacts.map(
                     (artifact) => html`
                       <div class="media-card ${artifact.pinned ? "pinned" : ""}">
-                        ${editingArtifacts.includes(artifact.id)
-                          ? html`
-                              <div class="card-edit-area">
-                                <textarea
-                                  class="card-edit-textarea"
-                                  .value=${artifact.description}
-                                  @input=${(e: Event) =>
-                                    editArtifact$.next({
-                                      id: artifact.id,
-                                      field: "description",
-                                      value: (e.target as HTMLTextAreaElement).value,
-                                    })}
-                                ></textarea>
-                              </div>
-                            `
-                          : html`
-                              <generative-image
-                                class="card-image"
-                                prompt="${artifact.description}"
-                                width="400"
-                                height="400"
-                                title="${artifact.description}"
-                              ></generative-image>
-                            `}
+                        <div class="card-edit-area ${editingArtifacts.includes(artifact.id) ? "" : "hidden"}">
+                          <textarea
+                            class="card-edit-textarea"
+                            .value=${artifact.description}
+                            @input=${(e: Event) =>
+                              editArtifact$.next({
+                                id: artifact.id,
+                                field: "description",
+                                value: (e.target as HTMLTextAreaElement).value,
+                              })}
+                          ></textarea>
+                        </div>
+                        <generative-image
+                          class="card-image ${editingArtifacts.includes(artifact.id) ? "hidden" : ""}"
+                          prompt="${artifact.description}"
+                          width="400"
+                          height="400"
+                          title="${artifact.description}"
+                        ></generative-image>
                         <div class="card-content">
                           <textarea
                             class="card-name"
