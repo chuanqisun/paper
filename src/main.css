@@ -222,7 +222,7 @@ input:focus {
     padding-inline: 1ch;
   }
 
-  &:has(.card-edit-area) .card-content {
+  &:has(.card-edit-area:not(.hidden)) .card-content {
     flex-grow: 0;
   }
 
