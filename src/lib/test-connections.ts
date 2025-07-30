@@ -1,5 +1,6 @@
 import { from, Observable } from "rxjs";
 import { map } from "rxjs/operators";
+import OpenAI from "openai";
 import { generateImage, type FluxConnection, type GenerateImageOptions } from "./generate-image";
 import type { ApiKeys } from "./storage";
 
@@ -10,7 +11,6 @@ export interface TestConnectionRequest {
 
 export function testOpenAIConnection(apiKey: string): Observable<string> {
   const request = async (): Promise<string> => {
-    const { default: OpenAI } = await import("openai");
 
     const openai = new OpenAI({
       apiKey,
