@@ -43,7 +43,7 @@ export class FluxImageElement extends HTMLElement {
         width: parseInt(this.getAttribute("width") ?? "400"),
         height: parseInt(this.getAttribute("height") ?? "400"),
         placeholderSrc: this.getAttribute("placeholderSrc"),
-        model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell-free",
+        model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell",
       })),
       distinctUntilChanged(
         (a, b) => a.prompt === b.prompt && a.width === b.width && a.height === b.height && a.model === b.model,

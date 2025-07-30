@@ -466,30 +466,25 @@ export function fitView(
                                           ${designMockups.map(
                                             (mockup) => html`
                                               <div class="media-card ${mockup.pinned ? "pinned" : ""}">
-                                                ${editingMockups.includes(mockup.id)
-                                                  ? html`
-                                                      <div class="card-edit-area">
-                                                        <textarea
-                                                          class="card-edit-textarea"
-                                                          .value=${mockup.description}
-                                                          @input=${(e: Event) =>
-                                                            editMockup$.next({
-                                                              id: mockup.id,
-                                                              field: "description",
-                                                              value: (e.target as HTMLTextAreaElement).value,
-                                                            })}
-                                                        ></textarea>
-                                                      </div>
-                                                    `
-                                                  : html`
-                                                      <generative-image
-                                                        class="card-image"
-                                                        prompt="${mockup.description}"
-                                                        width="400"
-                                                        height="400"
-                                                        title="${mockup.description}"
-                                                      ></generative-image>
-                                                    `}
+                                                <div class="card-edit-area ${editingMockups.includes(mockup.id) ? "" : "hidden"}">
+                                                  <textarea
+                                                    class="card-edit-textarea"
+                                                    .value=${mockup.description}
+                                                    @input=${(e: Event) =>
+                                                      editMockup$.next({
+                                                        id: mockup.id,
+                                                        field: "description",
+                                                        value: (e.target as HTMLTextAreaElement).value,
+                                                      })}
+                                                  ></textarea>
+                                                </div>
+                                                <generative-image
+                                                  class="card-image ${editingMockups.includes(mockup.id) ? "hidden" : ""}"
+                                                  prompt="${mockup.description}"
+                                                  width="400"
+                                                  height="400"
+                                                  title="${mockup.description}"
+                                                ></generative-image>
                                                 <div class="card-content">
                                                   <textarea
                                                     class="card-name"

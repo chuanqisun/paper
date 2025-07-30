@@ -180,6 +180,10 @@ input:focus {
     background: #fafafa;
   }
 
+  .hidden {
+    display: none !important;
+  }
+
   .card-image {
     width: 100%;
     aspect-ratio: 1;
