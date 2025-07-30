@@ -32,10 +32,11 @@ export function generateImage(
 
     together.images
       .create({
-        model: options.model || "black-forest-labs/FLUX.1-schnell",
+        model: options.model || "black-forest-labs/FLUX.1-schnell-free",
         prompt: options.prompt,
         width: options.width,
         height: options.height,
+        disable_safety_checker: true,
         steps: 3,
       })
       .then((response) => {

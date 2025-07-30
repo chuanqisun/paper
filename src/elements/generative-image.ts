@@ -99,11 +99,27 @@ export class FluxImageElement extends HTMLElement {
       return this.currentImageUrl;
     }
 
+    if (this.status === "error") {
+      return "https://placehold.co/400x400/FFF/666?text=Error";
+    }
+
     if (attrs.placeholderSrc) {
       return attrs.placeholderSrc;
     }
 
     return `https://placehold.co/${attrs.width}x${attrs.height}`;
+  }
+
+  private getAltText(attrs: { prompt: string }) {
+    if (this.status === "success") {
+      return attrs.prompt || "Generated image";
+    }
+
+    if (this.status === "error") {
+      return this.errorMessage || "Error generating image";
+    }
+
+    return "Loading image...";
   }
 
   private renderTemplate(attrs: {
@@ -114,10 +130,8 @@ export class FluxImageElement extends HTMLElement {
     model: string;
   }) {
     const imageSrc = this.getImageSrc(attrs);
+    const altText = this.getAltText(attrs);
 
-    return html`
-      <img src="${imageSrc}" alt="${attrs.prompt || "Generated image"}" loading="lazy" />
-      ${this.status === "error" ? html`<div class="error">${this.errorMessage}</div>` : ""}
-    `;
+    return html`<img src="${imageSrc}" alt="${altText}" title="${altText}" loading="lazy" />`;
   }
 }

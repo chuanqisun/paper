@@ -1,4 +1,6 @@
 import { from, Observable } from "rxjs";
+import { map } from "rxjs/operators";
+import { generateImage, type FluxConnection, type GenerateImageOptions } from "./generate-image";
 import type { ApiKeys } from "./storage";
 
 export interface TestConnectionRequest {
@@ -38,36 +40,15 @@ export function testOpenAIConnection(apiKey: string): Observable<string> {
 }
 
 export function testTogetherConnection(apiKey: string): Observable<string> {
-  const request = async (): Promise<string> => {
-    try {
-      const { default: Together } = await import("together-ai");
-
-      const together = new Together({
-        apiKey,
-      });
-
-      const response = await together.images.create({
-        model: "black-forest-labs/FLUX.1-schnell-Free",
-        prompt: "A green checkmark",
-        steps: 3,
-      });
-
-      if (response.data && response.data.length > 0) {
-        const imageData = response.data[0];
-        if ("b64_json" in imageData && imageData.b64_json) {
-          return `data:image/png;base64,${imageData.b64_json}`;
-        } else if ("url" in imageData && imageData.url) {
-          return imageData.url;
-        }
-      }
-
-      throw new Error("No image data received from Together.ai");
-    } catch (error) {
-      throw new Error(`Together.ai test failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
+  const connection: FluxConnection = { apiKey };
+  const options: GenerateImageOptions = {
+    prompt: "A green checkmark",
+    width: 400,
+    height: 400,
+    model: "black-forest-labs/FLUX.1-schnell-Free",
   };
 
-  return from(request());
+  return generateImage(connection, options).pipe(map((result) => result.url));
 }
 
 export function testConnection({ provider, apiKeys }: TestConnectionRequest): Observable<string> {
