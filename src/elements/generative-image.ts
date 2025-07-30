@@ -1,5 +1,5 @@
 import { html, render } from "lit-html";
-import { combineLatest, of, Subject } from "rxjs";
+import { combineLatest, concat, of, Subject } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
 import { generateImage, type FluxConnection } from "../lib/generate-image";
 import "./generative-image.css";
@@ -43,7 +43,7 @@ export class FluxImageElement extends HTMLElement {
         width: parseInt(this.getAttribute("width") ?? "400"),
         height: parseInt(this.getAttribute("height") ?? "400"),
         placeholderSrc: this.getAttribute("placeholderSrc") ?? "https://placehold.co/400x400",
-        model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell",
+        model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell-free",
       })),
       distinctUntilChanged(
         (a, b) => a.prompt === b.prompt && a.width === b.width && a.height === b.height && a.model === b.model,
@@ -62,35 +62,34 @@ export class FluxImageElement extends HTMLElement {
 
         const loadingState: ImageState = {
           status: "loading",
-          imageUrl: this.getPlaceholderUrl(attrs),
+          imageUrl: this.getGeneratingUrl(attrs),
           altText: "Generating image...",
         };
 
         try {
           const connection = FluxImageElement.getConnection();
-          return of(loadingState).pipe(
-            switchMap(() =>
-              generateImage(connection, {
-                prompt: attrs.prompt,
-                width: attrs.width,
-                height: attrs.height,
-                model: attrs.model,
-              }).pipe(
-                map((result) => ({
-                  status: "success" as Status,
-                  imageUrl: result.url,
-                  altText: attrs.prompt || "Generated image",
-                })),
-                catchError((error) =>
-                  of({
-                    status: "error" as Status,
-                    imageUrl: this.getErrorUrl(attrs),
-                    altText: error.message || "Failed to generate image",
-                  }),
-                ),
-              ),
+
+          const generation$ = generateImage(connection, {
+            prompt: attrs.prompt,
+            width: attrs.width,
+            height: attrs.height,
+            model: attrs.model,
+          }).pipe(
+            map((result) => ({
+              status: "success" as Status,
+              imageUrl: result.url,
+              altText: attrs.prompt || "Generated image",
+            })),
+            catchError((error) =>
+              of({
+                status: "error" as Status,
+                imageUrl: this.getErrorUrl(attrs),
+                altText: error.message || "Failed to generate image",
+              }),
             ),
           );
+
+          return concat(of(loadingState), generation$);
         } catch (error) {
           return of({
             status: "error" as Status,
@@ -117,6 +116,10 @@ export class FluxImageElement extends HTMLElement {
 
   private getErrorUrl(attrs: { width: number; height: number }) {
     return `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?text=Error&font=source-sans-pro`;
+  }
+
+  private getGeneratingUrl(attrs: { width: number; height: number }) {
+    return `https://placehold.co/${attrs.width}x${attrs.height}/EEE/999?text=Generating&font=source-sans-pro`;
   }
 
   private renderTemplate(
