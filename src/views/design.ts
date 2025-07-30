@@ -13,6 +13,7 @@ import {
   take,
   tap,
 } from "rxjs";
+import "../elements/generative-image.js";
 import type { Design } from "../lib/generate-designs.ts";
 import { streamDesigns$, streamMockups$, type Mockup } from "../lib/generate-designs.ts";
 import { observe } from "../lib/observe-directive.ts";
@@ -21,7 +22,6 @@ import type { ConceptWithId } from "./conceptualize.js";
 import "./design.css";
 import type { ArtifactWithId } from "./moodboard.js";
 import type { ParameterWithId } from "./parameterize.js";
-import "../elements/generative-image.js";
 
 export interface DesignWithId extends Design {
   id: string;
