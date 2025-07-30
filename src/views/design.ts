@@ -433,15 +433,15 @@ export function fitView(
                                 <div class="design-mockups">
                                   ${designMockups.length > 0
                                     ? html`
-                                        <div class="mockups-grid">
+                                        <div class="cards-grid">
                                           ${designMockups.map(
                                             (mockup) => html`
-                                              <div class="mockup-card ${mockup.pinned ? "pinned" : ""}">
+                                              <div class="media-card ${mockup.pinned ? "pinned" : ""}">
                                                 ${editingMockups.includes(mockup.id)
                                                   ? html`
-                                                      <div class="mockup-edit-area">
+                                                      <div class="card-edit-area">
                                                         <textarea
-                                                          class="mockup-description-edit"
+                                                          class="card-edit-textarea"
                                                           .value=${mockup.description}
                                                           @input=${(e: Event) =>
                                                             editMockup$.next({
@@ -454,15 +454,15 @@ export function fitView(
                                                     `
                                                   : html`
                                                       <img
-                                                        class="mockup-image"
+                                                        class="card-image"
                                                         src="https://placehold.co/400"
                                                         alt="${mockup.name}"
                                                         title="${mockup.description}"
                                                       />
                                                     `}
-                                                <div class="mockup-content">
+                                                <div class="card-content">
                                                   <textarea
-                                                    class="mockup-name"
+                                                    class="card-name"
                                                     rows="1"
                                                     .value=${mockup.name}
                                                     @input=${(e: Event) =>

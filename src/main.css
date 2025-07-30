@@ -159,3 +159,71 @@ input {
 input:focus {
   outline: 2px solid var(--color-text-active);
 }
+
+/* Card components */
+.media-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #eee;
+  background: white;
+
+  &.pinned {
+    border-color: black;
+    background: #fafafa;
+  }
+
+  .card-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card-edit-area {
+    height: 12ch;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .card-edit-textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #f8f8f8;
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 1ch;
+    resize: none;
+    field-sizing: content;
+  }
+
+  .card-content {
+    padding: 1ch 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5ch;
+    flex-grow: 1;
+  }
+
+  .card-content menu {
+    padding-inline: 1ch;
+  }
+
+  .card:has(.card-edit-area) .card-content {
+    flex-grow: 0;
+  }
+
+  .card-name {
+    font-weight: bold;
+    min-width: 0;
+    flex: 1;
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    background: transparent;
+    width: 100%;
+    resize: none;
+    field-sizing: content;
+  }
+}

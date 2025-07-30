@@ -167,15 +167,15 @@ export function visualizeView(
 
           ${artifacts.length > 0
             ? html`
-                <div class="artifacts-grid">
+                <div class="cards-grid">
                   ${artifacts.map(
                     (artifact) => html`
-                      <div class="artifact-card ${artifact.pinned ? "accepted" : ""}">
+                      <div class="media-card ${artifact.pinned ? "pinned" : ""}">
                         ${editingArtifacts.includes(artifact.id)
                           ? html`
-                              <div class="artifact-edit-area">
+                              <div class="card-edit-area">
                                 <textarea
-                                  class="artifact-description-edit"
+                                  class="card-edit-textarea"
                                   .value=${artifact.description}
                                   @input=${(e: Event) =>
                                     editArtifact$.next({
@@ -188,15 +188,15 @@ export function visualizeView(
                             `
                           : html`
                               <img
-                                class="artifact-image"
+                                class="card-image"
                                 src="https://placehold.co/400"
                                 alt="${artifact.name}"
                                 title="${artifact.description}"
                               />
                             `}
-                        <div class="artifact-content">
+                        <div class="card-content">
                           <textarea
-                            class="artifact-name"
+                            class="card-name"
                             rows="1"
                             .value=${artifact.name}
                             @input=${(e: Event) =>
