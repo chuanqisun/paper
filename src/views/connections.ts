@@ -73,7 +73,9 @@ export function connectionsView(): ConnectionsViewResult {
 
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
-    map((loading) => loading.openai || loading.together || (!apiKeys$.value.openai && !apiKeys$.value.together)),
+    mergeMap((loading) =>
+      apiKeys$.pipe(map((apiKeys) => loading.openai || loading.together || (!apiKeys.openai && !apiKeys.together))),
+    ),
   );
   const buttonText$ = testLoading$.pipe(
     map((loading) => (loading.openai || loading.together ? "Testing..." : "Test Connections")),
@@ -84,13 +86,17 @@ export function connectionsView(): ConnectionsViewResult {
       testResults$.pipe(
         mergeMap((results) =>
           testErrors$.pipe(
-            map((errors) => {
-              if (!apiKeys$.value.openai) return "✗ Not set";
-              if (loading.openai) return `Testing...`;
-              if (errors.openai) return `✗ ${errors.openai}`;
-              if (results.openai) return `✓ ${results.openai}`;
-              return "✓ Set";
-            }),
+            mergeMap((errors) =>
+              apiKeys$.pipe(
+                map((apiKeys) => {
+                  if (!apiKeys.openai) return "✗ Not set";
+                  if (loading.openai) return `Testing...`;
+                  if (errors.openai) return `✗ ${errors.openai}`;
+                  if (results.openai) return `✓ ${results.openai}`;
+                  return "✓ Set";
+                }),
+              ),
+            ),
           ),
         ),
       ),
@@ -102,13 +108,17 @@ export function connectionsView(): ConnectionsViewResult {
       testResults$.pipe(
         mergeMap((results) =>
           testErrors$.pipe(
-            map((errors) => {
-              if (!apiKeys$.value.together) return html`✗ Not set`;
-              if (loading.together) return html`Testing...`;
-              if (errors.together) return html`✗ ${errors.together}`;
-              if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
-              return html`✓ Set`;
-            }),
+            mergeMap((errors) =>
+              apiKeys$.pipe(
+                map((apiKeys) => {
+                  if (!apiKeys.together) return html`✗ Not set`;
+                  if (loading.together) return html`Testing...`;
+                  if (errors.together) return html`✗ ${errors.together}`;
+                  if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
+                  return html`✓ Set`;
+                }),
+              ),
+            ),
           ),
         ),
       ),
@@ -137,12 +147,13 @@ export function connectionsView(): ConnectionsViewResult {
   const handleTestSubmit = (e: Event) => {
     e.preventDefault();
 
+    const currentApiKeys = apiKeys$.value;
     // Test OpenAI first
-    if (apiKeys$.value.openai) {
+    if (currentApiKeys.openai) {
       testConnection$.next({ provider: "openai" });
     }
     // Then test Together.ai
-    if (apiKeys$.value.together) {
+    if (currentApiKeys.together) {
       testConnection$.next({ provider: "together" });
     }
   };
