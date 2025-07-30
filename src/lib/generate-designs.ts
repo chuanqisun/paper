@@ -33,6 +33,8 @@ export interface StreamMockupsParams {
 
 export function streamDesigns$(params: StreamDesignsParams): Observable<Design> {
   return new Observable<Design>((subscriber) => {
+    const abortController = new AbortController();
+
     const openai = new OpenAI({
       dangerouslyAllowBrowser: true,
       apiKey: params.apiKey,
@@ -108,12 +110,17 @@ Respond in this JSON format:
 }
         `.trim();
 
-        const responseStream = await openai.responses.create({
-          model: "gpt-4.1",
-          input: prompt,
-          text: { format: { type: "json_object" } },
-          stream: true,
-        });
+        const responseStream = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: prompt,
+            text: { format: { type: "json_object" } },
+            stream: true,
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
 
         for await (const chunk of responseStream) {
           if (chunk.type === "response.output_text.delta") {
@@ -125,11 +132,17 @@ Respond in this JSON format:
         subscriber.error(error);
       }
     })();
+
+    return () => {
+      abortController.abort();
+    };
   });
 }
 
 export function streamMockups$(params: StreamMockupsParams): Observable<Mockup> {
   return new Observable<Mockup>((subscriber) => {
+    const abortController = new AbortController();
+
     const openai = new OpenAI({
       dangerouslyAllowBrowser: true,
       apiKey: params.apiKey,
@@ -196,12 +209,17 @@ Respond in this JSON format:
 }
         `.trim();
 
-        const responseStream = await openai.responses.create({
-          model: "gpt-4.1",
-          input: prompt,
-          text: { format: { type: "json_object" } },
-          stream: true,
-        });
+        const responseStream = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: prompt,
+            text: { format: { type: "json_object" } },
+            stream: true,
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
 
         for await (const chunk of responseStream) {
           if (chunk.type === "response.output_text.delta") {
@@ -213,6 +231,10 @@ Respond in this JSON format:
         subscriber.error(error);
       }
     })();
+
+    return () => {
+      abortController.abort();
+    };
   });
 }
 
@@ -280,7 +302,20 @@ Respond in this JSON format:
         const response = await openai.responses.create(
           {
             model: "gpt-4.1",
-            input: prompt,
+            input: [
+              { role: "developer", content: prompt },
+
+              // Few-shot examples using existing designs
+              ...(params.existingDesigns ?? []).flatMap((example) => [
+                { role: "user" as const, content: example.name },
+                {
+                  role: "assistant" as const,
+                  content: JSON.stringify({ name: example.name, parameterAssignments: example.parameterAssignments }),
+                },
+              ]),
+
+              { role: "user", content: params.designIdea },
+            ],
             text: { format: { type: "json_object" } },
           },
           {
