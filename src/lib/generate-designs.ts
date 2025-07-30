@@ -101,7 +101,7 @@ Respond in this JSON format:
     {
       "name": "string",
       "parameterAssignments": {
-        "parameter_name": "assigned_value"
+        "Parameter name": "Assigned value"
       }
     }
   ]
@@ -213,5 +213,103 @@ Respond in this JSON format:
         subscriber.error(error);
       }
     })();
+  });
+}
+
+export function generateManualDesign$(params: {
+  designIdea: string;
+  parti: string;
+  domain: string;
+  concepts: { name: string; description: string }[];
+  artifacts: { name: string; description: string }[];
+  parameters: { name: string; description: string }[];
+  apiKey: string;
+  existingDesigns?: Design[];
+}): Observable<Design> {
+  return new Observable<Design>((subscriber) => {
+    const abortController = new AbortController();
+
+    const openai = new OpenAI({
+      dangerouslyAllowBrowser: true,
+      apiKey: params.apiKey,
+    });
+
+    (async () => {
+      try {
+        const conceptsList = params.concepts.map((c) => `- ${c.name}: ${c.description}`).join("\n");
+        const artifactsList = params.artifacts.map((a) => `- ${a.name}: ${a.description}`).join("\n");
+        const parametersList = params.parameters.map((p) => `- ${p.name}: ${p.description}`).join("\n");
+
+        const prompt = `
+Generate a product design specification for ${params.domain} based on this user's design idea and established context:
+
+\`\`\`user_design_idea
+${params.designIdea}
+\`\`\`
+
+\`\`\`parti
+${params.parti}
+\`\`\`
+
+\`\`\`concepts
+${conceptsList}
+\`\`\`
+
+\`\`\`artifacts
+${artifactsList}
+\`\`\`
+
+\`\`\`parameters
+${parametersList}
+\`\`\`
+
+Create a single design specification that interprets the user's design idea within the context of the Parti, concepts, and visual artifacts. Assign concrete values to all the parameters listed above.
+
+Design name should be descriptive but concise, capturing the key design direction from the user's idea for ${params.domain}.
+Parameter assignments should map each parameter name to a specific value that reflects the user's design idea while being suitable for ${params.domain}.
+
+Respond in this JSON format:
+{
+  "name": "string",
+  "parameterAssignments": {
+    "Parameter name": "Assigned value"
+  }
+}
+        `.trim();
+
+        const response = await openai.responses.create(
+          {
+            model: "gpt-4.1",
+            input: prompt,
+            text: { format: { type: "json_object" } },
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
+
+        const message = response.output[0];
+        if (message?.type === "message" && "content" in message) {
+          const content = message.content?.[0];
+          if (content?.type === "output_text") {
+            try {
+              const design = JSON.parse(content.text.trim()) as Design;
+              if (design.name && design.parameterAssignments) {
+                subscriber.next(design);
+              }
+            } catch (parseError) {
+              subscriber.error(new Error("Failed to parse design JSON response"));
+            }
+          }
+        }
+        subscriber.complete();
+      } catch (error) {
+        subscriber.error(error);
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
   });
 }

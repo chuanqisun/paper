@@ -3,6 +3,7 @@ import {
   BehaviorSubject,
   catchError,
   combineLatest,
+  EMPTY,
   finalize,
   map,
   merge,
@@ -17,7 +18,7 @@ import {
 } from "rxjs";
 import "../elements/generative-image.js";
 import type { Design } from "../lib/generate-designs.ts";
-import { streamDesigns$, streamMockups$, type Mockup } from "../lib/generate-designs.ts";
+import { generateManualDesign$, streamDesigns$, streamMockups$, type Mockup } from "../lib/generate-designs.ts";
 import { observe } from "../lib/observe-directive.ts";
 import { type ApiKeys } from "../lib/storage.js";
 import type { ConceptWithId } from "./conceptualize.js";
@@ -52,6 +53,8 @@ export function fitView(
   const rejectedMockups$ = new BehaviorSubject<MockupWithId[]>([]);
   const renderingDesigns$ = new BehaviorSubject<Set<string>>(new Set());
   const editingMockups$ = new BehaviorSubject<string[]>([]);
+  const newDesignIdea$ = new BehaviorSubject<string>("");
+  const isGeneratingManualDesign$ = new BehaviorSubject<boolean>(false);
 
   // Actions
   const generateDesigns$ = new Subject<void>();
@@ -62,6 +65,8 @@ export function fitView(
   const revertRejection$ = new Subject<string>();
   const clearAllRejected$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
+  const addManualDesign$ = new Subject<void>();
+  const stopAddingDesign$ = new Subject<void>();
   const renderMockups$ = new Subject<string>();
   const stopRender$ = new Subject<string>();
   const editMockup$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
@@ -216,6 +221,73 @@ export function fitView(
       // Keep only pinned designs
       designs$.next(pinnedDesigns);
     }),
+  );
+
+  // Add manual design effect
+  const addManualDesignEffect$ = addManualDesign$.pipe(
+    tap(() => isGeneratingManualDesign$.next(true)),
+    switchMap(() =>
+      combineLatest([apiKeys$, concepts$, artifacts$, parameters$, parti$, domain$]).pipe(
+        take(1),
+        map(([apiKeys, concepts, artifacts, parameters, parti, domain]) => ({
+          designIdea: newDesignIdea$.value.trim(),
+          parti,
+          domain,
+          apiKey: apiKeys.openai,
+          concepts: concepts.map((c) => ({ name: c.concept, description: c.description })),
+          artifacts: artifacts.map((a) => ({ name: a.name, description: a.description })),
+          parameters: parameters.map((p) => ({ name: p.name, description: p.description })),
+          existingDesigns: designs$.value,
+        })),
+        switchMap(({ designIdea, parti, domain, apiKey, concepts, artifacts, parameters, existingDesigns }) => {
+          if (!designIdea || !parti || !domain || !apiKey) {
+            isGeneratingManualDesign$.next(false);
+            return EMPTY;
+          }
+
+          if (concepts.length === 0) {
+            console.error("No concepts available");
+            isGeneratingManualDesign$.next(false);
+            return EMPTY;
+          }
+
+          if (parameters.length === 0) {
+            console.error("No parameters available");
+            isGeneratingManualDesign$.next(false);
+            return EMPTY;
+          }
+
+          return generateManualDesign$({
+            designIdea,
+            parti,
+            domain,
+            concepts,
+            artifacts,
+            parameters,
+            apiKey,
+            existingDesigns,
+          }).pipe(
+            takeUntil(stopAddingDesign$),
+            tap((design) => {
+              const newDesign: DesignWithId = {
+                ...design,
+                id: Math.random().toString(36).substr(2, 9),
+                pinned: true,
+              };
+              designs$.next([...designs$.value, newDesign]);
+              newDesignIdea$.next("");
+              isGeneratingManualDesign$.next(false);
+            }),
+            catchError((error) => {
+              console.error("Error generating manual design:", error);
+              isGeneratingManualDesign$.next(false);
+              return EMPTY;
+            }),
+            finalize(() => isGeneratingManualDesign$.next(false)),
+          );
+        }),
+      ),
+    ),
   );
 
   // Render mockups effect
@@ -383,9 +455,11 @@ export function fitView(
     rejectedMockups$,
     renderingDesigns$,
     editingMockups$,
+    newDesignIdea$,
+    isGeneratingManualDesign$,
   ]).pipe(
     map(
-      ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, renderingDesigns, editingMockups]) => html`
+      ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, renderingDesigns, editingMockups, newDesignIdea, isGeneratingManualDesign]) => html`
         <div class="design">
           <p>Generate design concepts by assigning concrete values to parameters</p>
 
@@ -604,6 +678,25 @@ export function fitView(
               ${isGenerating ? "Stop generating" : "Generate Designs"}
             </button>
             ${designs.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+            <textarea
+              rows="1"
+              placeholder="New design idea..."
+              .value=${newDesignIdea}
+              @input=${(e: Event) => newDesignIdea$.next((e.target as HTMLTextAreaElement).value)}
+              ?disabled=${isGeneratingManualDesign}
+            ></textarea>
+            <button
+              @click=${() => {
+                if (isGeneratingManualDesign) {
+                  stopAddingDesign$.next();
+                } else {
+                  addManualDesign$.next();
+                }
+              }}
+              ?disabled=${(!newDesignIdea.trim() && !isGeneratingManualDesign)}
+            >
+              ${isGeneratingManualDesign ? "Stop adding" : "Add Design"}
+            </button>
           </menu>
           ${rejectedDesigns.length > 0
             ? html`
@@ -641,6 +734,7 @@ export function fitView(
     revertEffect$,
     clearAllRejectedEffect$,
     pinnedOnlyEffect$,
+    addManualDesignEffect$,
     renderMockupsEffect$,
     editMockupEffect$,
     pinMockupEffect$,

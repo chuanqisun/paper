@@ -46,6 +46,19 @@ Text-to-image generation should run concurrently. We kick off image gen as soon 
 ## User control
 
 A button to Generate Designs (design specifications)
+
+### Manual Design Addition
+
+A text input field where users can type in the high-level idea of a design they want to add manually.
+A button labeled "Add Design" that triggers the manual design creation process.
+
+When a user adds a design manually:
+
+1. The system takes the user's input text as the design concept
+2. AI automatically assigns sensible values to all parameters based on the user's input and the established context (Parti, concepts, visual artifacts)
+3. The new design is added to the list of designs with AI-generated parameter assignments
+4. The design follows the same workflow as AI-generated designs (can be pinned, edited, or rejected)
+
 For each design, user can see the design name and all parameter assignments.
 For each design, user can Pin, Edit, or Reject it, similar to the concept generation workflow
 User can edit parameter assignments directly within each design card
@@ -56,6 +69,14 @@ For each mockup, user can Pin, Edit, or Reject it, similar to the visualize work
 User needs to click an Edit button to see the text representation behind the image
 
 ## UI
+
+### Manual Design Addition Interface
+
+- A text input field for entering the high-level design idea
+- "Add Design" button positioned next to or below the input field
+- The input should be prominently placed at the top of the design section for easy access
+
+### Design Display
 
 Display designs as cards in a single column layout. Each card shows:
 
