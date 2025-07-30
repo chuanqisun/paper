@@ -51,6 +51,7 @@ export function parameterizeView(
   const clearAllRejected$ = new Subject<void>();
   const updateDomain$ = new Subject<string>();
   const addManualParameter$ = new Subject<void>();
+  const stopAddingParameter$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
 
   // Update domain effect
@@ -190,6 +191,7 @@ export function parameterizeView(
           }
 
           return regenerateParameterDescription$({ parameterName, domain, apiKey, existingParameters }).pipe(
+            takeUntil(stopAddingParameter$),
             tap((description) => {
               const newParameter: ParameterWithId = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -206,6 +208,7 @@ export function parameterizeView(
               isGeneratingDescription$.next(false);
               return EMPTY;
             }),
+            finalize(() => isGeneratingDescription$.next(false)),
           );
         }),
       ),
@@ -319,10 +322,16 @@ export function parameterizeView(
               ?disabled=${isGeneratingDescription || !domain.trim()}
             ></textarea>
             <button
-              @click=${() => addManualParameter$.next()}
-              ?disabled=${isGeneratingDescription || !newParameterName.trim() || !domain.trim()}
+              @click=${() => {
+                if (isGeneratingDescription) {
+                  stopAddingParameter$.next();
+                } else {
+                  addManualParameter$.next();
+                }
+              }}
+              ?disabled=${(!newParameterName.trim() && !isGeneratingDescription) || !domain.trim()}
             >
-              ${isGeneratingDescription ? "Generating..." : "Add Parameter"}
+              ${isGeneratingDescription ? "Stop adding" : "Add Parameter"}
             </button>
           </menu>
           ${rejectedParameters.length > 0

@@ -43,6 +43,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
   const revertRejection$ = new Subject<string>();
   const clearAllRejected$ = new Subject<void>();
   const addManualConcept$ = new Subject<void>();
+  const stopAddingConcept$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
 
   // Generate concepts effect
@@ -158,6 +159,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
           }
 
           return regenerateDescription$({ concept, apiKey, existingConcepts }).pipe(
+            takeUntil(stopAddingConcept$),
             tap((description) => {
               const newConcept: ConceptWithId = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -174,6 +176,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
               isGeneratingDescription$.next(false);
               return EMPTY;
             }),
+            finalize(() => isGeneratingDescription$.next(false)),
           );
         }),
       ),
@@ -269,8 +272,17 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
               @input=${(e: Event) => newConceptTitle$.next((e.target as HTMLTextAreaElement).value)}
               ?disabled=${isGeneratingDescription}
             ></textarea>
-            <button @click=${() => addManualConcept$.next()} ?disabled=${isGeneratingDescription || !newTitle.trim()}>
-              ${isGeneratingDescription ? "Generating..." : "Add Concept"}
+            <button
+              @click=${() => {
+                if (isGeneratingDescription) {
+                  stopAddingConcept$.next();
+                } else {
+                  addManualConcept$.next();
+                }
+              }}
+              ?disabled=${!newTitle.trim() && !isGeneratingDescription}
+            >
+              ${isGeneratingDescription ? "Stop adding" : "Add Concept"}
             </button>
           </menu>
 
