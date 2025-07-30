@@ -1,4 +1,5 @@
 import { html } from "lit-html";
+import { repeat } from "lit-html/directives/repeat.js";
 import { BehaviorSubject, EMPTY, Observable, Subject, combineLatest, merge } from "rxjs";
 import { catchError, finalize, map, switchMap, take, takeUntil, tap } from "rxjs/operators";
 import {
@@ -295,7 +296,9 @@ export function moodboardView(
           ${artifacts.length > 0
             ? html`
                 <div class="cards-grid">
-                  ${artifacts.map(
+                  ${repeat(
+                    artifacts,
+                    (artifact) => artifact.id,
                     (artifact) => html`
                       <div class="media-card ${artifact.pinned ? "pinned" : ""}">
                         <div class="card-edit-area ${editingArtifacts.includes(artifact.id) ? "" : "hidden"}">

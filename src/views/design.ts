@@ -1,4 +1,5 @@
 import { html } from "lit-html";
+import { repeat } from "lit-html/directives/repeat.js";
 import {
   BehaviorSubject,
   catchError,
@@ -459,7 +460,17 @@ export function fitView(
     isGeneratingManualDesign$,
   ]).pipe(
     map(
-      ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, renderingDesigns, editingMockups, newDesignIdea, isGeneratingManualDesign]) => html`
+      ([
+        designs,
+        rejectedDesigns,
+        isGenerating,
+        mockups,
+        rejectedMockups,
+        renderingDesigns,
+        editingMockups,
+        newDesignIdea,
+        isGeneratingManualDesign,
+      ]) => html`
         <div class="design">
           <p>Generate design concepts by assigning concrete values to parameters</p>
 
@@ -532,7 +543,9 @@ export function fitView(
                                   ${designMockups.length > 0
                                     ? html`
                                         <div class="cards-grid">
-                                          ${designMockups.map(
+                                          ${repeat(
+                                            designMockups,
+                                            (mockup) => mockup.id,
                                             (mockup) => html`
                                               <div class="media-card ${mockup.pinned ? "pinned" : ""}">
                                                 <div
@@ -693,7 +706,7 @@ export function fitView(
                   addManualDesign$.next();
                 }
               }}
-              ?disabled=${(!newDesignIdea.trim() && !isGeneratingManualDesign)}
+              ?disabled=${!newDesignIdea.trim() && !isGeneratingManualDesign}
             >
               ${isGeneratingManualDesign ? "Stop adding" : "Add Design"}
             </button>
