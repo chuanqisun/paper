@@ -71,9 +71,10 @@ ${conceptsList}
 ${artifactsList}
 \`\`\`${existingList}${rejectedList}
 
-Generate ${count} design parameters that represent specific design decisions that a designer must make for ${params.domain}. Each parameter should be a decision that is usually associated with a list of possible choices.
+Generate ${count} design parameters that represent specific design decisions that a designer must make for ${params.domain}.
+Each parameter should be single purpose, representing an atomic decision that is usually associated with a list of possible choices.
 
-Parameter name should be concise and clear, representing a specific design decision (e.g., "Material" for clothing, "Location" for art installation).
+Parameter name should be concrete and concise, representing a specific design decision (e.g., "Fabric material" for clothing, "Location" for art installation).
 Parameter description should be a short sentence that defines what this design decision encompasses, including example values that can be assigned to this parameter. This provides clarity about the scope and potential choices without introducing bias into the design process.
 
 Respond in this JSON format:
@@ -91,6 +92,7 @@ Respond in this JSON format:
           model: "gpt-4.1",
           input: prompt,
           text: { format: { type: "json_object" } },
+          temperature: 0.3,
           stream: true,
         });
 
@@ -140,6 +142,7 @@ export function regenerateParameterDescription$(params: {
 
               { role: "user", content: params.parameterName },
             ],
+            temperature: 0.3,
           },
           {
             signal: abortController.signal,

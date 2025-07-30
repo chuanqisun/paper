@@ -37,7 +37,7 @@ export function generateImage(
         width: options.width,
         height: options.height,
         disable_safety_checker: true,
-        steps: 3,
+        steps: 4,
       })
       .then((response) => {
         if (!response.data || response.data.length === 0) {

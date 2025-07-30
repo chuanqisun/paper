@@ -64,8 +64,8 @@ ${params.parti}
 ${conceptsList}
 \`\`\`${existingList}${rejectedList}
 
-Generate ${count} diverse artifacts that would be commonly seen in a moodboard. Each artifact should represent multi-sensory aspects of the Parti and be suitable for image generation.
-An artifact should be grounded in the real world and human's lived experience, e.g. an object, material, texture, color scheme, sound, smell, emotion, or environment that evokes the intended experience of the design.
+Generate ${count} diverse artifacts that would be commonly seen in a moodboard. Each artifact should represent or evoke the Parti and be suitable for image generation.
+An artifact should be grounded in the real world and a human's lived experience, e.g. an object, material, texture, color scheme, sound, smell, emotion, or environment that evokes the intended experience of the design.
 
 Artifact name should be very short (one word or short phrase).
 Artifact description should be one detailed sentence including subject, scene, and style for AI image generation.
@@ -85,6 +85,7 @@ Respond in this JSON format:
           model: "gpt-4.1",
           input: prompt,
           text: { format: { type: "json_object" } },
+          temperature: 0.3,
           stream: true,
         });
 
@@ -134,6 +135,7 @@ export function regenerateArtifactDescription$(params: {
 
               { role: "user", content: params.artifactName },
             ],
+            temperature: 0.3,
           },
           {
             signal: abortController.signal,

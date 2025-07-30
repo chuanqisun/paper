@@ -56,7 +56,7 @@ Generate conceptual keywords that best represent this Parti:
 ${params.parti}
 \`\`\`${existingList}${rejectedList}
 
-Generate up to ${params.existingConcepts.length ? 3 : 5} new concepts (one word, or compound word) with short descriptions that capture the essence of the Parti. Each concept should be unique and meaningful.
+Generate up to ${params.existingConcepts.length ? 3 : 5} new concepts (one word, or compound word) with short descriptions that capture some essence of the Parti. Each concept should be unique and meaningful.
 
 Respond in this JSON format:
 {
@@ -74,6 +74,7 @@ Respond in this JSON format:
             model: "gpt-4.1",
             input: prompt,
             text: { format: { type: "json_object" } },
+            temperature: 0.3,
             stream: true,
           },
           {
@@ -127,6 +128,7 @@ export function regenerateDescription$(params: {
 
               { role: "user", content: params.concept },
             ],
+            temperature: 0.3,
           },
           {
             signal: abortController.signal,

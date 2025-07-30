@@ -74,7 +74,7 @@ export function streamDesigns$(params: StreamDesignsParams): Observable<Design> 
         const count = isIncremental ? 2 : 3;
 
         const prompt = `
-Generate product design specifications for ${params.domain} based on this Parti, concepts, visual artifacts, and parameters:
+Generate product design concept for ${params.domain} based on this Parti, concepts, visual artifacts, and parameters:
 
 \`\`\`parti
 ${params.parti}
@@ -92,7 +92,7 @@ ${artifactsList}
 ${parametersList}
 \`\`\`${existingList}${rejectedList}
 
-Generate ${count} diverse design specifications for ${params.domain} that assign concrete values to the parameters. Each design should reflect cohesive design decisions that align with the Parti, concepts, and visual direction, specifically tailored for the ${params.domain} domain.
+Generate ${count} diverse design for ${params.domain}. Each design assigns concrete values to the parameters. Each design should reflect cohesive design decisions that align with the Parti, concepts, and visual direction, specifically tailored for the ${params.domain} domain.
 
 Design name should be descriptive but concise, capturing the key design direction for ${params.domain}.
 Parameter assignments should map each parameter name to a specific value that reflects the design decisions suitable for ${params.domain}.
@@ -101,7 +101,7 @@ Respond in this JSON format:
 {
   "designs": [
     {
-      "name": "string",
+      "name": "Name of The Design",
       "parameterAssignments": {
         "Parameter name": "Assigned value"
       }
@@ -116,6 +116,7 @@ Respond in this JSON format:
             input: prompt,
             text: { format: { type: "json_object" } },
             stream: true,
+            temperature: 0.3,
           },
           {
             signal: abortController.signal,
@@ -197,13 +198,14 @@ Generate ${count} different views or aspects of the same unified ${params.domain
 
 Mockup name should be the name of the view or aspect being shown (e.g., "Front", "Interior", "Detail", "In Use", "Side", "Top", etc.).
 Mockup description must be fully self-contained and descriptive enough to serve as an accessibility caption for blind people. It should explicitly describe what the product is, what view/aspect is being shown, all visible materials and colors, the setting/environment, lighting conditions, and any other visual details that would help someone understand exactly what they would see in the image. Include specific details from the parameter assignments and explain how they manifest visually in this ${params.domain} product.
+Mockups should carefully consider their subject, scene, and style to be consistent with each other. If some elements appear in multiple mock ups, make sure they have the same level of details and remain visually consistent.
 
 Respond in this JSON format:
 {
   "mockups": [
     {
-      "name": "string",
-      "description": "string"
+      "name": "Name of view",
+      "description": "Description of the mockup"
     }
   ]
 }
@@ -215,6 +217,7 @@ Respond in this JSON format:
             input: prompt,
             text: { format: { type: "json_object" } },
             stream: true,
+            temperature: 0.3,
           },
           {
             signal: abortController.signal,
@@ -263,7 +266,7 @@ export function generateManualDesign$(params: {
         const parametersList = params.parameters.map((p) => `- ${p.name}: ${p.description}`).join("\n");
 
         const prompt = `
-Generate a product design specification for ${params.domain} based on this user's design idea and established context:
+Generate a product design for ${params.domain} based on this user's design idea and established context:
 
 \`\`\`user_design_idea
 ${params.designIdea}
@@ -292,7 +295,7 @@ Parameter assignments should map each parameter name to a specific value that re
 
 Respond in this JSON format:
 {
-  "name": "string",
+  "name": "Name of The Design",
   "parameterAssignments": {
     "Parameter name": "Assigned value"
   }
@@ -316,6 +319,7 @@ Respond in this JSON format:
 
               { role: "user", content: params.designIdea },
             ],
+            temperature: 0.3,
             text: { format: { type: "json_object" } },
           },
           {
