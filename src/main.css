@@ -206,7 +206,6 @@ input:focus {
     display: flex;
     flex-direction: column;
     gap: 0.5ch;
-    flex-grow: 1;
   }
 
   .card-content menu {
@@ -228,5 +227,13 @@ input:focus {
     width: 100%;
     resize: none;
     field-sizing: content;
+  }
+}
+
+generative-image {
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }

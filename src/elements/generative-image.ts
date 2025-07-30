@@ -63,7 +63,7 @@ export class FluxImageElement extends HTMLElement {
         const loadingState: ImageState = {
           status: "loading",
           imageUrl: this.getGeneratingUrl(attrs),
-          altText: "Generating image...",
+          altText: attrs.prompt ?? "<blank>",
         };
 
         try {

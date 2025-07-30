@@ -21,6 +21,7 @@ import type { ConceptWithId } from "./conceptualize.js";
 import "./design.css";
 import type { ArtifactWithId } from "./moodboard.js";
 import type { ParameterWithId } from "./parameterize.js";
+import "../elements/generative-image.js";
 
 export interface DesignWithId extends Design {
   id: string;
@@ -461,12 +462,13 @@ export function fitView(
                                                       </div>
                                                     `
                                                   : html`
-                                                      <img
+                                                      <generative-image
                                                         class="card-image"
-                                                        src="https://placehold.co/400"
-                                                        alt="${mockup.name}"
+                                                        prompt="${mockup.description}"
+                                                        width="400"
+                                                        height="400"
                                                         title="${mockup.description}"
-                                                      />
+                                                      ></generative-image>
                                                     `}
                                                 <div class="card-content">
                                                   <textarea
