@@ -520,6 +520,12 @@ export function fitView(
                                                             >
                                                               ✅ Pinned
                                                             </button>
+                                                            <button
+                                                              class="small"
+                                                              @click=${() => toggleEditMockup$.next(mockup.id)}
+                                                            >
+                                                              Edit
+                                                            </button>
                                                           `
                                                         : html`
                                                             <button

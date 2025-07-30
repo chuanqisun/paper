@@ -344,6 +344,7 @@ export function moodboardView(
                                     <button class="small" @click=${() => acceptArtifact$.next(artifact.id)}>
                                       ✅ Pinned
                                     </button>
+                                    <button class="small" @click=${() => toggleEdit$.next(artifact.id)}>Edit</button>
                                   `
                                 : html`
                                     <button class="small" @click=${() => acceptArtifact$.next(artifact.id)}>Pin</button>
