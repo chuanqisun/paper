@@ -2,7 +2,7 @@ import { html, render } from "lit-html";
 import { combineLatest, EMPTY, of, Subject } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
 import { generateImage, type FluxConnection } from "../lib/generate-image";
-import "./genearative-image.css";
+import "./generative-image.css";
 
 type Status = "empty" | "loading" | "error" | "success";
 

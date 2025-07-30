@@ -24,7 +24,7 @@ We generate 5 initially, and 3 incrementally
 
 Artifact generation is single thread but we will receive incremental outputs (as we do in concept generation).
 
-Text-to-image generation should run concurrently. We kick off image gen as soon as each image description is generated. This can be achieved with RxJS mergeMap operator.
+Text-to-image generation happens automatically within the generative-image web component. Each artifact's description is passed as the prompt to the component, which handles the image generation process internally using the Together.ai API.
 
 ## User control
 
@@ -34,6 +34,6 @@ For each artifact, user can Accept or Reject it, similar to the concept generati
 
 ## UI
 
-Display artifacts as cards in a grid. The cards are like Polaroids with the image on top and the description below.
+Display artifacts as cards in a grid. The cards are like Polaroids with the generative-image component on top and the description below. The generative-image component automatically handles loading states, error states, and displays a placeholder while generating.
 
 Rejected artifacts only show the title with a restore button.

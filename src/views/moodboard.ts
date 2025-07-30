@@ -187,12 +187,13 @@ export function moodboardView(
                               </div>
                             `
                           : html`
-                              <img
+                              <generative-image
                                 class="card-image"
-                                src="https://placehold.co/400"
-                                alt="${artifact.name}"
+                                prompt="${artifact.description}"
+                                width="400"
+                                height="400"
                                 title="${artifact.description}"
-                              />
+                              ></generative-image>
                             `}
                         <div class="card-content">
                           <textarea

@@ -6,6 +6,45 @@ applyTo: "generative-image.ts,generative-image.css"
 
 A web component that displays AI generated image based on a user prompt.
 
+## Quick reference
+
+```html
+<!-- Basic usage -->
+<generative-image prompt="A serene mountain landscape" width="512" height="512"></generative-image>
+
+<!-- Custom placeholder -->
+<generative-image
+  prompt="Modern minimalist office"
+  width="1024"
+  height="768"
+  placeholder-src="https://placehold.co/1024x768"
+>
+</generative-image>
+
+<!-- Status-based styling -->
+<generative-image prompt="Futuristic cityscape" width="800" height="600" class="my-image"> </generative-image>
+
+<!-- Different models -->
+<generative-image prompt="Abstract art" width="512" height="512" model="black-forest-labs/FLUX.1-schnell">
+</generative-image>
+
+<generative-image prompt="Portrait sketch" width="512" height="512" model="black-forest-labs/FLUX.1-schnell-Free">
+</generative-image>
+
+<style>
+  .my-image[status="loading"] {
+    opacity: 0.5;
+  }
+  .my-image[status="error"] {
+    border: 2px solid red;
+  }
+  .my-image img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+```
+
 ## Progressive enhancement
 
 It should render a placeholder while loading, using placehold.co.
