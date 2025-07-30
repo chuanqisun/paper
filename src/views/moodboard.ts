@@ -5,14 +5,14 @@ import { streamArtifacts$, type Artifact } from "../lib/generate-artifacts.js";
 import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
 import type { ConceptWithId } from "./conceptualize.js";
-import "./visualize.css";
+import "./moodboard.css";
 
 export interface ArtifactWithId extends Artifact {
   id: string;
   pinned: boolean;
 }
 
-export function visualizeView(
+export function moodboardView(
   apiKeys$: Observable<ApiKeys>,
   concepts$: Observable<ConceptWithId[]>,
   parti$: Observable<string>,
@@ -162,7 +162,7 @@ export function visualizeView(
   const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, editingArtifacts$]).pipe(
     map(
       ([artifacts, rejectedArtifacts, isGenerating, editingArtifacts]) => html`
-        <div class="visualize">
+        <div class="moodboard">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
 
           ${artifacts.length > 0

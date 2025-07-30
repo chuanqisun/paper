@@ -19,8 +19,8 @@ import { observe } from "../lib/observe-directive.ts";
 import { type ApiKeys } from "../lib/storage.js";
 import type { ConceptWithId } from "./conceptualize.js";
 import "./design.css";
+import type { ArtifactWithId } from "./moodboard.js";
 import type { ParameterWithId } from "./parameterize.js";
-import type { ArtifactWithId } from "./visualize.js";
 
 export interface DesignWithId extends Design {
   id: string;

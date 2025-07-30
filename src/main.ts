@@ -5,9 +5,9 @@ import "./main.css";
 import { conceptualMappingView } from "./views/conceptualize";
 import { connectionsView } from "./views/connections";
 import { fitView } from "./views/design";
+import { moodboardView } from "./views/moodboard";
 import { parameterizeView } from "./views/parameterize";
 import { partiView } from "./views/parti";
-import { visualizeView } from "./views/visualize";
 
 // Register custom elements
 FluxImageElement.define(() => ({
@@ -26,7 +26,7 @@ const fitContent = document.querySelector("#renderings-content") as HTMLElement;
 const { connectionsTemplate, apiKeys$ } = connectionsView();
 const { partiTemplate, partiText$ } = partiView();
 const { conceptualTemplate, concepts$, effects$: conceptualize$ } = conceptualMappingView(apiKeys$, partiText$);
-const { visualizeTemplate, artifacts$, effects$: visualize$ } = visualizeView(apiKeys$, concepts$, partiText$);
+const { visualizeTemplate, artifacts$, effects$: visualize$ } = moodboardView(apiKeys$, concepts$, partiText$);
 const {
   parameterizeTemplate,
   parameters$,

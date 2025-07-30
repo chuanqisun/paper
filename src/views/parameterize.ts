@@ -17,8 +17,8 @@ import { regenerateParameterDescription$, streamParameters$ } from "../lib/gener
 import { observe } from "../lib/observe-directive";
 import type { ApiKeys } from "../lib/storage";
 import type { ConceptWithId } from "./conceptualize.js";
+import type { ArtifactWithId } from "./moodboard.js";
 import "./parameterize.css";
-import type { ArtifactWithId } from "./visualize.js";
 
 export interface ParameterWithId extends Parameter {
   id: string;
