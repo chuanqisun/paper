@@ -193,7 +193,7 @@ export function parameterizeView(
                 description,
                 pinned: true,
               };
-              parameters$.next([newParameter, ...parameters$.value]);
+              parameters$.next([...parameters$.value, newParameter]);
               newParameterName$.next("");
               isGeneratingDescription$.next(false);
             }),

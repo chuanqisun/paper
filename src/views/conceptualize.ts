@@ -161,7 +161,7 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
                 description,
                 pinned: true,
               };
-              concepts$.next([newConcept, ...concepts$.value]);
+              concepts$.next([...concepts$.value, newConcept]);
               newConceptTitle$.next("");
               isGeneratingDescription$.next(false);
             }),
