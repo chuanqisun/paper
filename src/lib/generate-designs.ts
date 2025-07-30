@@ -174,16 +174,16 @@ export function streamMockups$(params: StreamMockupsParams): Observable<Mockup> 
         const count = isIncremental ? 2 : 3;
 
         const prompt = `
-Generate product design mockups for ${params.domain} based on these design specifications:
+Generate product design renderings for ${params.domain} based on these design specifications:
 
 \`\`\`designs
 ${designsList}
 \`\`\`${existingList}${rejectedList}
 
-Generate ${count} diverse product mockups for ${params.domain} that visualize how these design decisions would manifest in actual products. Each mockup should reflect the parameter assignments and domain context.
+Generate ${count} different views or aspects of the same unified ${params.domain} product that incorporates all the design specifications above. Each rendering should showcase different details, usage contexts, or configurations of the same product design. The renderings should be complementary views that together tell the complete story of the product.
 
-Mockup name should be very short, one word or a short phrase only.
-Mockup description should be one sentence long, detailed description including subject, scene, style, and additional details according to the parameter assignments and ${params.domain} domain context.
+Mockup name should be the name of the view or aspect being shown (e.g., "Front", "Interior", "Detail", "In Use", "Side", "Top", etc.).
+Mockup description must be fully self-contained and descriptive enough to serve as an accessibility caption for blind people. It should explicitly describe what the product is, what view/aspect is being shown, all visible materials and colors, the setting/environment, lighting conditions, and any other visual details that would help someone understand exactly what they would see in the image. Include specific details from the parameter assignments and explain how they manifest visually in this ${params.domain} product.
 
 Respond in this JSON format:
 {

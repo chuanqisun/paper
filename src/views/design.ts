@@ -17,7 +17,7 @@ import { streamDesigns$, streamMockups$, type Mockup } from "../lib/generate-des
 import { observe } from "../lib/observe-directive.ts";
 import { type ApiKeys } from "../lib/storage.js";
 import type { ConceptWithId } from "./conceptualize.js";
-import "./fit.css";
+import "./design.css";
 import type { ParameterWithId } from "./parameterize.js";
 import type { ArtifactWithId } from "./visualize.js";
 
@@ -358,8 +358,8 @@ export function fitView(
   ]).pipe(
     map(
       ([designs, rejectedDesigns, isGenerating, mockups, rejectedMockups, isGeneratingMockups, editingMockups]) => html`
-        <div class="fit">
-          <p>Generate design specifications by assigning concrete values to parameters</p>
+        <div class="design">
+          <p>Generate design concepts by assigning concrete values to parameters</p>
 
           ${designs.length > 0
             ? html`

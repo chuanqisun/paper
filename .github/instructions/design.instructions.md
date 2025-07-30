@@ -1,8 +1,8 @@
 ---
-applyTo: "**/fit.*,**/generate-designs.ts"
+applyTo: "**/design.*,**/generate-designs.ts"
 ---
 
-# Feature: Fit
+# Feature: Design
 
 ## What
 
@@ -31,11 +31,11 @@ Input: list of designs ({name: string, parameterAssignments: Record<string, stri
 Intermediate output: list of mockups ({name: string, description: string}[])
 Final output: list of images (urls)
 
-Mockup name is for human to quickly identify what it represents. It should be very short, one word, or a short phrase only.
+Mockup name is the name of the view or aspect being shown (e.g., "Front", "Interior", "Detail", "In Use", "Side", "Top", etc.).
 
-Mockup description is a detailed text description for AI to generate images from. It should be one sentence long, detailed description including subject, scene, style, and additional details according to the parameter assignments and domain context.
+Mockup description is a detailed text description for AI to generate images from. It must be fully self-contained and descriptive enough to serve as an accessibility caption for blind people. It should explicitly describe what the product is, what view/aspect is being shown, all visible materials and colors, the setting/environment, lighting conditions, and any other visual details that would help someone understand exactly what they would see in the image. Include specific details from the parameter assignments and explain how they manifest visually in this domain product.
 
-Mockup generation uses a similar process to artifact generation, with a system prompt that instructs the LLM to create product design mockups based on the parameter assignments and domain knowledge. The mockups should visualize how the design decisions would manifest in actual products within the specified domain.
+Mockup generation uses a similar process to artifact generation, with a system prompt that instructs the LLM to create product design renderings based on the parameter assignments and domain knowledge. The mockups should visualize different aspects, views, or configurations of the same unified product design, showcasing how the design decisions would manifest in actual products within the specified domain. These are complementary views that together tell the complete story of the product.
 
 We generate 3 initially, and 2 incrementally
 

@@ -2,7 +2,7 @@ import { render } from "lit-html";
 import "./main.css";
 import { conceptualMappingView } from "./views/conceptualize";
 import { connectionsView } from "./views/connections";
-import { fitView } from "./views/fit";
+import { fitView } from "./views/design";
 import { parameterizeView } from "./views/parameterize";
 import { partiView } from "./views/parti";
 import { visualizeView } from "./views/visualize";

@@ -16,7 +16,7 @@ A Human-AI co-iterative loop. Non-linear progression. End with product requireme
 | Conceptualize | Explore related concepts  | Suggest and define concepts                            |
 | Visualize     | Steer AI with preference  | Generate artifacts while adhering to latest preference |
 | Parameterize  | Provide domain knowledge  | Suggest aspects of product decision making             |
-| Fit           | Steer AI with preference  | Assign values to produce design decisions              |
+| Design        | Steer AI with preference  | Assign values to produce design decisions              |
 
 ## Flow control
 
