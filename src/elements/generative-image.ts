@@ -1,6 +1,6 @@
 import { html, render } from "lit-html";
 import { combineLatest, EMPTY, of, Subject } from "rxjs";
-import { catchError, debounceTime, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
+import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
 import { generateImage, type FluxConnection } from "../lib/generate-image";
 import "./genearative-image.css";
 
@@ -36,11 +36,11 @@ export class FluxImageElement extends HTMLElement {
   private setupReactivity() {
     const attributes$ = this.render$.pipe(
       map(() => ({
-        prompt: this.getAttribute("prompt") || "",
-        width: parseInt(this.getAttribute("width") || "512"),
-        height: parseInt(this.getAttribute("height") || "512"),
-        placeholderSrc: this.getAttribute("placeholderSrc") || "",
-        model: this.getAttribute("model") || "black-forest-labs/FLUX.1-schnell",
+        prompt: this.getAttribute("prompt") ?? "",
+        width: parseInt(this.getAttribute("width") ?? "400"),
+        height: parseInt(this.getAttribute("height") ?? "400"),
+        placeholderSrc: this.getAttribute("placeholderSrc") ?? "https://placehold.co/400x400",
+        model: this.getAttribute("model") ?? "black-forest-labs/FLUX.1-schnell",
       })),
       distinctUntilChanged(
         (a, b) => a.prompt === b.prompt && a.width === b.width && a.height === b.height && a.model === b.model,
@@ -48,7 +48,6 @@ export class FluxImageElement extends HTMLElement {
     );
 
     const imageGeneration$ = attributes$.pipe(
-      debounceTime(300),
       switchMap((attrs) => {
         if (!attrs.prompt.trim()) {
           this.updateStatus("empty");
