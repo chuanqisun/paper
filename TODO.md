@@ -6,6 +6,7 @@ When you are done addressing the item, you must move it from the `#TODO` list to
 # TODO
 
 - isGenerating is prematurely flipped to false
+- Fix concurrent rendering issue
 
 # DONE
 

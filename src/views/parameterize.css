@@ -109,9 +109,4 @@
   .rejected-item button:hover {
     background: #eee;
   }
-
-  .loading {
-    color: #666;
-    font-style: italic;
-  }
 }

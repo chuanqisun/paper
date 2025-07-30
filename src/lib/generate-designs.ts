@@ -18,6 +18,19 @@ export interface Design {
   parameterAssignments: Record<string, string>;
 }
 
+export interface Mockup {
+  name: string;
+  description: string;
+}
+
+export interface StreamMockupsParams {
+  designs: Design[];
+  domain: string;
+  existingMockups: string[];
+  rejectedMockups: string[];
+  apiKey: string;
+}
+
 export function streamDesigns$(params: StreamDesignsParams): Observable<Design> {
   return new Observable<Design>((subscriber) => {
     const openai = new OpenAI({
@@ -90,6 +103,94 @@ Respond in this JSON format:
       "parameterAssignments": {
         "parameter_name": "assigned_value"
       }
+    }
+  ]
+}
+        `.trim();
+
+        const responseStream = await openai.responses.create({
+          model: "gpt-4.1",
+          input: prompt,
+          text: { format: { type: "json_object" } },
+          stream: true,
+        });
+
+        for await (const chunk of responseStream) {
+          if (chunk.type === "response.output_text.delta") {
+            parser.write(chunk.delta);
+          }
+        }
+        subscriber.complete();
+      } catch (error) {
+        subscriber.error(error);
+      }
+    })();
+  });
+}
+
+export function streamMockups$(params: StreamMockupsParams): Observable<Mockup> {
+  return new Observable<Mockup>((subscriber) => {
+    const openai = new OpenAI({
+      dangerouslyAllowBrowser: true,
+      apiKey: params.apiKey,
+    });
+
+    const parser = new JSONParser();
+
+    // Wire up parser event to emit mockups
+    parser.onValue = (entry) => {
+      // Check if this is an array item under the "mockups" key
+      if (typeof entry.key === "number" && entry.parent && entry.value && typeof entry.value === "object") {
+        const mockup = entry.value as unknown as Mockup;
+        if (mockup.name && mockup.description) {
+          subscriber.next(mockup);
+        }
+      }
+    };
+
+    // Call OpenAI responses API in structured mode, streaming output
+    (async () => {
+      try {
+        const designsList = params.designs
+          .map((d) => {
+            const assignments = Object.entries(d.parameterAssignments)
+              .map(([key, value]) => `  - ${key}: ${value}`)
+              .join("\n");
+            return `**${d.name}**\n${assignments}`;
+          })
+          .join("\n\n");
+
+        const existingList =
+          params.existingMockups.length > 0
+            ? `\n\nExisting mockups (avoid repetition):\n${params.existingMockups.map((m) => `- ${m}`).join("\n")}`
+            : "";
+
+        const rejectedList =
+          params.rejectedMockups.length > 0
+            ? `\n\nRejected mockups (do not suggest these):\n${params.rejectedMockups.map((m) => `- ${m}`).join("\n")}`
+            : "";
+
+        const isIncremental = params.existingMockups.length > 0;
+        const count = isIncremental ? 2 : 3;
+
+        const prompt = `
+Generate product design mockups for ${params.domain} based on these design specifications:
+
+\`\`\`designs
+${designsList}
+\`\`\`${existingList}${rejectedList}
+
+Generate ${count} diverse product mockups for ${params.domain} that visualize how these design decisions would manifest in actual products. Each mockup should reflect the parameter assignments and domain context.
+
+Mockup name should be very short, one word or a short phrase only.
+Mockup description should be one sentence long, detailed description including subject, scene, style, and additional details according to the parameter assignments and ${params.domain} domain context.
+
+Respond in this JSON format:
+{
+  "mockups": [
+    {
+      "name": "string",
+      "description": "string"
     }
   ]
 }

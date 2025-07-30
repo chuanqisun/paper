@@ -57,23 +57,6 @@ p {
   color: var(--color-text-secondary);
 }
 
-label {
-  color: var(--color-text-secondary);
-}
-
-menu {
-  display: flex;
-  gap: 1ch;
-  flex-wrap: wrap;
-
-  textarea {
-    flex: 1;
-    min-width: 20ch;
-    resize: none;
-    field-sizing: content;
-  }
-}
-
 /* Header */
 .header {
   gap: var(--spacing-unit);
@@ -104,6 +87,23 @@ menu {
 }
 
 /* Form elements */
+label {
+  color: var(--color-text-secondary);
+}
+
+menu {
+  display: flex;
+  gap: 1ch;
+  flex-wrap: wrap;
+
+  textarea {
+    flex: 1;
+    min-width: 20ch;
+    resize: none;
+    field-sizing: content;
+  }
+}
+
 textarea {
   font-family: inherit;
   font-size: inherit;

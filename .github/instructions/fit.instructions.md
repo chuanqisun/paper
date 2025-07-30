@@ -51,6 +51,7 @@ For each design, user can Pin, Edit, or Reject it, similar to the concept genera
 User can edit parameter assignments directly within each design card
 
 A button to Render Mockups (product design mockups) that uses the generated parameters and domain from the parameterize step
+For each design, user can see a "Render" button that appears before Pin/Reject buttons
 For each mockup, user can Pin, Edit, or Reject it, similar to the visualize workflow
 User needs to click an Edit button to see the text representation behind the image
 
