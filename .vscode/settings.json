@@ -1,0 +1,5 @@
+{
+  "chat.instructionsFilesLocations": {
+    "**/*.instructions.md": true
+  }
+}

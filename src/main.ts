@@ -1,4 +1,6 @@
 import { render } from "lit-html";
+import { FluxImageElement } from "./elements/generative-image";
+import { loadApiKeys } from "./lib/storage";
 import "./main.css";
 import { conceptualMappingView } from "./views/conceptualize";
 import { connectionsView } from "./views/connections";
@@ -6,6 +8,11 @@ import { fitView } from "./views/design";
 import { parameterizeView } from "./views/parameterize";
 import { partiView } from "./views/parti";
 import { visualizeView } from "./views/visualize";
+
+// Register custom elements
+FluxImageElement.define(() => ({
+  apiKey: loadApiKeys().together || "",
+}));
 
 // 1. Global DOM references
 const connectionsContent = document.querySelector(".connections-content") as HTMLElement;

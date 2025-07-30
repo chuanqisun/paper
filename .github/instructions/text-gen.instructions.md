@@ -1,5 +1,5 @@
 ---
-applyTo: "src/lib/**/*.ts"
+applyTo: "**/src/lib/**/*.ts"
 ---
 
 # LLM Text Generation

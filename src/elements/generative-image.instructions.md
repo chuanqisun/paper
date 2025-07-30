@@ -1,5 +1,5 @@
 ---
-applyTo: "**/generative-image.ts"
+applyTo: "generative-image.ts,generative-image.css"
 ---
 
 ## Goal

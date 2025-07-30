@@ -4,6 +4,9 @@
   --color-text: #222;
   --color-text-secondary: #666;
   --color-text-active: #000;
+  --color-error: #d73a49;
+  --color-error-bg: #fff5f5;
+  --color-error-border: #fdaeb7;
   --spacing-unit: 1ch;
 }
 

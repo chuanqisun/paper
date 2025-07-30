@@ -1,5 +1,5 @@
 ---
-applyTo: "src/elements/**/*.ts, src/lib/**/*.ts"
+applyTo: "src/elements/**/*.ts,src/lib/**/*.ts"
 ---
 
 # AI Image Generation
