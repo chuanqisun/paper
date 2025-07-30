@@ -1,6 +1,6 @@
 import { html } from "lit-html";
 import { BehaviorSubject, Observable, Subject, combineLatest, merge } from "rxjs";
-import { catchError, map, switchMap, take, tap } from "rxjs/operators";
+import { catchError, finalize, map, switchMap, take, takeUntil, tap } from "rxjs/operators";
 import { streamArtifacts$, type Artifact } from "../lib/generate-artifacts.js";
 import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
@@ -25,6 +25,7 @@ export function moodboardView(
 
   // Actions
   const generateArtifacts$ = new Subject<void>();
+  const stopGeneration$ = new Subject<void>();
   const editArtifact$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
   const acceptArtifact$ = new Subject<string>();
   const rejectArtifact$ = new Subject<string>();
@@ -68,6 +69,7 @@ export function moodboardView(
           const rejectedArtifacts = rejectedArtifacts$.value;
 
           return streamArtifacts$({ parti, concepts, existingArtifacts, rejectedArtifacts, apiKey }).pipe(
+            takeUntil(stopGeneration$),
             map((artifact) => ({
               ...artifact,
               id: Math.random().toString(36).substr(2, 9),
@@ -80,11 +82,11 @@ export function moodboardView(
               console.error("Error generating artifacts:", error);
               return [];
             }),
+            finalize(() => isGenerating$.next(false)),
           );
         }),
       ),
     ),
-    tap(() => isGenerating$.next(false)),
   );
 
   // Edit artifact effect
@@ -237,10 +239,14 @@ export function moodboardView(
           <menu>
             <button
               @click=${() => {
-                generateArtifacts$.next();
+                if (isGenerating) {
+                  stopGeneration$.next();
+                } else {
+                  generateArtifacts$.next();
+                }
               }}
             >
-              ${isGenerating ? "Generating..." : "Generate Artifacts"}
+              ${isGenerating ? "Stop generating" : "Generate Artifacts"}
             </button>
             ${artifacts.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
           </menu>

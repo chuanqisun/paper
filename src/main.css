@@ -7,6 +7,7 @@
   --color-error: #d73a49;
   --color-error-bg: #fff5f5;
   --color-error-border: #fdaeb7;
+  --page-background: white;
   --spacing-unit: 1ch;
 }
 
@@ -26,7 +27,7 @@ html {
 
 body {
   color: var(--color-text);
-  background: white;
+  background: var(--page-background);
   line-height: 1.4;
 }
 
@@ -42,7 +43,7 @@ body {
 .main {
   display: flex;
   flex-direction: column;
-  gap: calc(8 * var(--spacing-unit));
+  gap: calc(6 * var(--spacing-unit));
 }
 
 /* Typography */
@@ -81,12 +82,16 @@ p {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-unit);
-}
 
-.section-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-unit);
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-unit);
+    position: sticky;
+    top: 0;
+    padding-block-start: 2ch;
+    background-color: var(--page-background);
+  }
 }
 
 /* Form elements */

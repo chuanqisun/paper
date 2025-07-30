@@ -3,6 +3,7 @@ import {
   BehaviorSubject,
   catchError,
   combineLatest,
+  finalize,
   map,
   merge,
   mergeMap,
@@ -11,6 +12,7 @@ import {
   Subject,
   switchMap,
   take,
+  takeUntil,
   tap,
 } from "rxjs";
 import "../elements/generative-image.js";
@@ -53,6 +55,7 @@ export function fitView(
 
   // Actions
   const generateDesigns$ = new Subject<void>();
+  const stopDesignGeneration$ = new Subject<void>();
   const editDesign$ = new Subject<{ id: string; field: "name" | "parameter"; parameterName?: string; value: string }>();
   const pinDesign$ = new Subject<string>();
   const rejectDesign$ = new Subject<string>();
@@ -60,6 +63,7 @@ export function fitView(
   const clearAllRejected$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
   const renderMockups$ = new Subject<string>();
+  const stopRender$ = new Subject<string>();
   const editMockup$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
   const pinMockup$ = new Subject<string>();
   const rejectMockup$ = new Subject<string>();
@@ -118,6 +122,7 @@ export function fitView(
             rejectedDesigns,
             apiKey,
           }).pipe(
+            takeUntil(stopDesignGeneration$),
             map(
               (design) =>
                 ({
@@ -134,11 +139,11 @@ export function fitView(
               console.error("Error generating designs:", error);
               return of();
             }),
+            finalize(() => isGenerating$.next(false)),
           );
         }),
       ),
     ),
-    tap(() => isGenerating$.next(false)),
   );
 
   // Edit design effect
@@ -263,6 +268,7 @@ export function fitView(
             rejectedMockups,
             apiKey,
           }).pipe(
+            takeUntil(stopRender$.pipe(map(stopDesignId => stopDesignId === designId))),
             map(
               (mockup) =>
                 ({
@@ -279,6 +285,11 @@ export function fitView(
             catchError((error) => {
               console.error("Error generating mockups:", error);
               return of();
+            }),
+            finalize(() => {
+              const currentRenderingDesigns = renderingDesigns$.value;
+              currentRenderingDesigns.delete(designId);
+              renderingDesigns$.next(new Set(currentRenderingDesigns));
             }),
           );
         }),
@@ -422,8 +433,17 @@ export function fitView(
                           )}
                         </div>
                         <menu>
-                          <button class="small" @click=${() => renderMockups$.next(design.id)}>
-                            ${renderingDesigns.has(design.id) ? "Rendering..." : "Render"}
+                          <button 
+                            class="small" 
+                            @click=${() => {
+                              if (renderingDesigns.has(design.id)) {
+                                stopRender$.next(design.id);
+                              } else {
+                                renderMockups$.next(design.id);
+                              }
+                            }}
+                          >
+                            ${renderingDesigns.has(design.id) ? "Stop rendering" : "Render"}
                           </button>
                           ${design.pinned
                             ? html`
@@ -572,10 +592,14 @@ export function fitView(
           <menu>
             <button
               @click=${() => {
-                generateDesigns$.next();
+                if (isGenerating) {
+                  stopDesignGeneration$.next();
+                } else {
+                  generateDesigns$.next();
+                }
               }}
             >
-              ${isGenerating ? "Generating..." : "Generate Designs"}
+              ${isGenerating ? "Stop generating" : "Generate Designs"}
             </button>
             ${designs.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
           </menu>

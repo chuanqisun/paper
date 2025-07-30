@@ -6,10 +6,12 @@ import {
   Subject,
   catchError,
   combineLatest,
+  finalize,
   map,
   merge,
   switchMap,
   take,
+  takeUntil,
   tap,
 } from "rxjs";
 import type { Parameter } from "../lib/generate-parameters";
@@ -41,6 +43,7 @@ export function parameterizeView(
 
   // Actions
   const generateParameters$ = new Subject<void>();
+  const stopGeneration$ = new Subject<void>();
   const editParameter$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
   const pinParameter$ = new Subject<string>();
   const rejectParameter$ = new Subject<string>();
@@ -104,6 +107,7 @@ export function parameterizeView(
             rejectedParameters,
             apiKey,
           }).pipe(
+            takeUntil(stopGeneration$),
             map((parameter) => ({
               ...parameter,
               id: Math.random().toString(36).substr(2, 9),
@@ -117,11 +121,11 @@ export function parameterizeView(
               console.error("Error generating parameters:", error);
               return EMPTY;
             }),
+            finalize(() => isGenerating$.next(false)),
           );
         }),
       ),
     ),
-    tap(() => isGenerating$.next(false)),
   );
 
   // Edit parameter effect
@@ -297,10 +301,14 @@ export function parameterizeView(
           <menu>
             <button
               @click=${() => {
-                generateParameters$.next();
+                if (isGenerating) {
+                  stopGeneration$.next();
+                } else {
+                  generateParameters$.next();
+                }
               }}
             >
-              ${isGenerating ? "Generating..." : "Generate Parameters"}
+              ${isGenerating ? "Stop generating" : "Generate Parameters"}
             </button>
             ${parameters.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
             <textarea
