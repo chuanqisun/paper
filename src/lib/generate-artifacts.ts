@@ -183,20 +183,33 @@ export function generateArtifactFromImage$(params: {
         const response = await openai.responses.create(
           {
             model: "gpt-4.1",
-            input: `Analyze this image and generate a moodboard artifact entry for it. 
+            input: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "input_text",
+                    text: `Analyze this image and generate a moodboard artifact entry for it.  
 
 Generate a name and description following these guidelines:
 - Name should be very short (one word or short phrase)
 - Description should be one detailed sentence including subject, scene, and style for AI image generation
 - The artifact should be grounded in the real world and human's lived experience${existingContext}
 
-Image: data:image/jpeg;base64,${params.imageBase64}
-
 Respond in this JSON format:
 {
   "name": "string",
   "description": "string"
 }`,
+                  },
+                  {
+                    type: "input_image",
+                    image_url: "data:image/jpeg;base64," + params.imageBase64,
+                    detail: "auto",
+                  },
+                ],
+              },
+            ],
             text: { format: { type: "json_object" } },
           },
           {

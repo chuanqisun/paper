@@ -1,7 +1,13 @@
 import { html } from "lit-html";
-import { BehaviorSubject, Observable, Subject, combineLatest, merge } from "rxjs";
+import { BehaviorSubject, EMPTY, Observable, Subject, combineLatest, merge } from "rxjs";
 import { catchError, finalize, map, switchMap, take, takeUntil, tap } from "rxjs/operators";
-import { streamArtifacts$, type Artifact } from "../lib/generate-artifacts.js";
+import {
+  fileToDataUrl,
+  generateArtifactFromImage$,
+  regenerateArtifactDescription$,
+  streamArtifacts$,
+  type Artifact,
+} from "../lib/generate-artifacts.js";
 import { observe } from "../lib/observe-directive.js";
 import { type ApiKeys } from "../lib/storage.js";
 import type { ConceptWithId } from "./conceptualize.js";
@@ -22,6 +28,9 @@ export function moodboardView(
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const editingArtifacts$ = new BehaviorSubject<string[]>([]);
+  const newArtifactDescription$ = new BehaviorSubject<string>("");
+  const isGeneratingFromText$ = new BehaviorSubject<boolean>(false);
+  const isGeneratingFromImage$ = new BehaviorSubject<boolean>(false);
 
   // Actions
   const generateArtifacts$ = new Subject<void>();
@@ -33,6 +42,9 @@ export function moodboardView(
   const clearAllRejected$ = new Subject<void>();
   const toggleEdit$ = new Subject<string>();
   const pinnedOnly$ = new Subject<void>();
+  const addManualArtifact$ = new Subject<void>();
+  const stopAddingArtifact$ = new Subject<void>();
+  const pasteImage$ = new Subject<ClipboardEvent>();
 
   // Generate artifacts effect
   const generateEffect$ = generateArtifacts$.pipe(
@@ -160,10 +172,123 @@ export function moodboardView(
     }),
   );
 
+  // Add manual artifact effect (from text description)
+  const addManualEffect$ = addManualArtifact$.pipe(
+    tap(() => isGeneratingFromText$.next(true)),
+    switchMap(() =>
+      apiKeys$.pipe(
+        take(1),
+        map((apiKeys) => ({
+          description: newArtifactDescription$.value.trim(),
+          apiKey: apiKeys.openai,
+          existingArtifacts: artifacts$.value.map((a) => ({ name: a.name, description: a.description })),
+        })),
+        switchMap(({ description, apiKey, existingArtifacts }) => {
+          if (!description || !apiKey) {
+            isGeneratingFromText$.next(false);
+            return EMPTY;
+          }
+
+          return regenerateArtifactDescription$({ artifactName: description, apiKey, existingArtifacts }).pipe(
+            takeUntil(stopAddingArtifact$),
+            tap((generatedDescription) => {
+              const newArtifact: ArtifactWithId = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: description,
+                description: generatedDescription,
+                pinned: true,
+              };
+              artifacts$.next([...artifacts$.value, newArtifact]);
+              newArtifactDescription$.next("");
+              isGeneratingFromText$.next(false);
+            }),
+            catchError((error) => {
+              console.error("Error generating artifact description:", error);
+              isGeneratingFromText$.next(false);
+              return EMPTY;
+            }),
+            finalize(() => isGeneratingFromText$.next(false)),
+          );
+        }),
+      ),
+    ),
+  );
+
+  // Paste image effect
+  const pasteImageEffect$ = pasteImage$.pipe(
+    tap(() => isGeneratingFromImage$.next(true)),
+    switchMap((event) =>
+      apiKeys$.pipe(
+        take(1),
+        switchMap((apiKeys) => {
+          if (!apiKeys.openai) {
+            isGeneratingFromImage$.next(false);
+            return EMPTY;
+          }
+
+          const files = Array.from(event.clipboardData?.files || []);
+          const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+          if (!imageFile) {
+            isGeneratingFromImage$.next(false);
+            return EMPTY;
+          }
+
+          const existingArtifacts = artifacts$.value.map((a) => ({ name: a.name, description: a.description }));
+
+          return new Observable<Artifact>((subscriber) => {
+            fileToDataUrl(imageFile)
+              .then((dataUrl) => {
+                const base64 = dataUrl.split(",")[1];
+                generateArtifactFromImage$({
+                  imageBase64: base64,
+                  apiKey: apiKeys.openai!,
+                  existingArtifacts,
+                }).subscribe(subscriber);
+              })
+              .catch((error) => subscriber.error(error));
+          }).pipe(
+            takeUntil(stopAddingArtifact$),
+            tap((artifact: Artifact) => {
+              const newArtifact: ArtifactWithId = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: artifact.name,
+                description: artifact.description,
+                pinned: true,
+              };
+              artifacts$.next([...artifacts$.value, newArtifact]);
+            }),
+            catchError((error) => {
+              console.error("Error generating artifact from image:", error);
+              return EMPTY;
+            }),
+            finalize(() => isGeneratingFromImage$.next(false)),
+          );
+        }),
+      ),
+    ),
+  );
+
   // Template
-  const template$ = combineLatest([artifacts$, rejectedArtifacts$, isGenerating$, editingArtifacts$]).pipe(
+  const template$ = combineLatest([
+    artifacts$,
+    rejectedArtifacts$,
+    isGenerating$,
+    editingArtifacts$,
+    newArtifactDescription$,
+    isGeneratingFromText$,
+    isGeneratingFromImage$,
+  ]).pipe(
     map(
-      ([artifacts, rejectedArtifacts, isGenerating, editingArtifacts]) => html`
+      ([
+        artifacts,
+        rejectedArtifacts,
+        isGenerating,
+        editingArtifacts,
+        newArtifactDescription,
+        isGeneratingFromText,
+        isGeneratingFromImage,
+      ]) => html`
         <div class="moodboard">
           <p>Generate artifacts that represent your Parti and accepted concepts</p>
 
@@ -249,6 +374,34 @@ export function moodboardView(
               ${isGenerating ? "Stop generating" : "Generate Artifacts"}
             </button>
             ${artifacts.length ? html`<button @click=${() => pinnedOnly$.next()}>Reject unpinned</button>` : ""}
+            <textarea
+              rows="1"
+              placeholder="New artifact or paste image..."
+              .value=${newArtifactDescription}
+              @input=${(e: Event) => newArtifactDescription$.next((e.target as HTMLTextAreaElement).value)}
+              @paste=${(e: ClipboardEvent) => {
+                // Check if there are files in clipboard
+                const files = Array.from(e.clipboardData?.files || []);
+                const hasImage = files.some((file) => file.type.startsWith("image/"));
+                if (hasImage) {
+                  e.preventDefault();
+                  pasteImage$.next(e);
+                }
+              }}
+              ?disabled=${isGeneratingFromText || isGeneratingFromImage}
+            ></textarea>
+            <button
+              @click=${() => {
+                if (isGeneratingFromText) {
+                  stopAddingArtifact$.next();
+                } else {
+                  addManualArtifact$.next();
+                }
+              }}
+              ?disabled=${(!newArtifactDescription.trim() && !isGeneratingFromText) || isGeneratingFromImage}
+            >
+              ${isGeneratingFromText ? "Stop adding" : isGeneratingFromImage ? "Processing image..." : "Add Artifact"}
+            </button>
           </menu>
           ${rejectedArtifacts.length > 0
             ? html`
@@ -287,6 +440,8 @@ export function moodboardView(
     clearAllRejectedEffect$,
     toggleEditEffect$,
     pinnedOnlyEffect$,
+    addManualEffect$,
+    pasteImageEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;
