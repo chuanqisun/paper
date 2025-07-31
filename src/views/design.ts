@@ -565,7 +565,10 @@ export function fitView(
                                             designMockups,
                                             (mockup) => mockup.id,
                                             (mockup) => html`
-                                              <div class="media-card ${mockup.pinned ? "pinned" : ""}" data-mockup-id="${mockup.id}">
+                                              <div
+                                                class="media-card ${mockup.pinned ? "pinned" : ""}"
+                                                data-mockup-id="${mockup.id}"
+                                              >
                                                 <div
                                                   class="card-edit-area ${editingMockups.includes(mockup.id)
                                                     ? ""
@@ -612,7 +615,10 @@ export function fitView(
                                                           >
                                                             Done
                                                           </button>
-                                                          <button class="small" @click=${() => retryMockup$.next(mockup.id)}>
+                                                          <button
+                                                            class="small"
+                                                            @click=${() => retryMockup$.next(mockup.id)}
+                                                          >
                                                             Retry
                                                           </button>
                                                         `
