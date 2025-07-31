@@ -26,6 +26,7 @@ export class FluxImageElement extends HTMLElement {
   }
 
   private render$ = new Subject<void>();
+  private retryCounter = 0;
 
   connectedCallback() {
     this.setupReactivity();
@@ -38,6 +39,11 @@ export class FluxImageElement extends HTMLElement {
     }
   }
 
+  retry() {
+    this.retryCounter++;
+    this.render$.next();
+  }
+
   private setupReactivity() {
     const attributes$ = this.render$.pipe(
       map(() => ({
@@ -48,9 +54,15 @@ export class FluxImageElement extends HTMLElement {
         model:
           this.getAttribute("model") ??
           (isDevMode ? "black-forest-labs/FLUX.1-schnell-free" : "black-forest-labs/FLUX.1-schnell"),
+        retryCounter: this.retryCounter,
       })),
       distinctUntilChanged(
-        (a, b) => a.prompt === b.prompt && a.width === b.width && a.height === b.height && a.model === b.model,
+        (a, b) =>
+          a.prompt === b.prompt &&
+          a.width === b.width &&
+          a.height === b.height &&
+          a.model === b.model &&
+          a.retryCounter === b.retryCounter,
       ),
     );
 

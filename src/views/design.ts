@@ -77,6 +77,7 @@ export function fitView(
   const clearAllRejectedMockups$ = new Subject<void>();
   const toggleEditMockup$ = new Subject<string>();
   const pinnedOnlyMockups$ = new Subject<void>();
+  const retryMockup$ = new Subject<string>();
 
   // Generate designs effect
   const generateEffect$ = generateDesigns$.pipe(
@@ -447,6 +448,23 @@ export function fitView(
     }),
   );
 
+  // Retry mockup effect
+  const retryMockupEffect$ = retryMockup$.pipe(
+    tap((id) => {
+      // Exit edit mode
+      const editing = editingMockups$.value.filter((e) => e !== id);
+      editingMockups$.next(editing);
+
+      // Find and retry the corresponding generative-image element by mockup ID
+      setTimeout(() => {
+        const imageElement = document.querySelector(`[data-mockup-id="${id}"] generative-image`) as any;
+        if (imageElement && typeof imageElement.retry === "function") {
+          imageElement.retry();
+        }
+      }, 0);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([
     designs$,
@@ -547,7 +565,7 @@ export function fitView(
                                             designMockups,
                                             (mockup) => mockup.id,
                                             (mockup) => html`
-                                              <div class="media-card ${mockup.pinned ? "pinned" : ""}">
+                                              <div class="media-card ${mockup.pinned ? "pinned" : ""}" data-mockup-id="${mockup.id}">
                                                 <div
                                                   class="card-edit-area ${editingMockups.includes(mockup.id)
                                                     ? ""
@@ -593,6 +611,9 @@ export function fitView(
                                                             @click=${() => toggleEditMockup$.next(mockup.id)}
                                                           >
                                                             Done
+                                                          </button>
+                                                          <button class="small" @click=${() => retryMockup$.next(mockup.id)}>
+                                                            Retry
                                                           </button>
                                                         `
                                                       : mockup.pinned
@@ -756,6 +777,7 @@ export function fitView(
     clearAllRejectedMockupsEffect$,
     toggleEditMockupEffect$,
     pinnedOnlyMockupsEffect$,
+    retryMockupEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;

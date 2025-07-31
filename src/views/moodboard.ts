@@ -46,6 +46,7 @@ export function moodboardView(
   const addManualArtifact$ = new Subject<void>();
   const stopAddingArtifact$ = new Subject<void>();
   const pasteImage$ = new Subject<ClipboardEvent>();
+  const retryArtifact$ = new Subject<string>();
 
   // Generate artifacts effect
   const generateEffect$ = generateArtifacts$.pipe(
@@ -270,6 +271,23 @@ export function moodboardView(
     ),
   );
 
+  // Retry artifact effect
+  const retryArtifactEffect$ = retryArtifact$.pipe(
+    tap((id) => {
+      // Exit edit mode
+      const editing = editingArtifacts$.value.filter((e) => e !== id);
+      editingArtifacts$.next(editing);
+
+      // Find and retry the corresponding generative-image element by artifact ID
+      setTimeout(() => {
+        const imageElement = document.querySelector(`[data-artifact-id="${id}"] generative-image`) as any;
+        if (imageElement && typeof imageElement.retry === "function") {
+          imageElement.retry();
+        }
+      }, 0);
+    }),
+  );
+
   // Template
   const template$ = combineLatest([
     artifacts$,
@@ -300,7 +318,7 @@ export function moodboardView(
                     artifacts,
                     (artifact) => artifact.id,
                     (artifact) => html`
-                      <div class="media-card ${artifact.pinned ? "pinned" : ""}">
+                      <div class="media-card ${artifact.pinned ? "pinned" : ""}" data-artifact-id="${artifact.id}">
                         <div class="card-edit-area ${editingArtifacts.includes(artifact.id) ? "" : "hidden"}">
                           <textarea
                             class="card-edit-textarea"
@@ -336,6 +354,7 @@ export function moodboardView(
                             ${editingArtifacts.includes(artifact.id)
                               ? html`
                                   <button class="small" @click=${() => toggleEdit$.next(artifact.id)}>Done</button>
+                                  <button class="small" @click=${() => retryArtifact$.next(artifact.id)}>Retry</button>
                                 `
                               : artifact.pinned
                                 ? html`
@@ -441,6 +460,7 @@ export function moodboardView(
     pinnedOnlyEffect$,
     addManualEffect$,
     pasteImageEffect$,
+    retryArtifactEffect$,
   );
 
   const staticTemplate = html`${observe(template$)}`;
