@@ -3,7 +3,7 @@ import { repeat } from "lit-html/directives/repeat.js";
 import { BehaviorSubject } from "rxjs";
 import { map } from "rxjs/operators";
 import { createComponent } from "./sdk/create-component";
-import { Counter } from "./sdk/example.component.";
+import { Counter } from "./sdk/example.component";
 
 const Main = createComponent(() => {
   const sectionCount$ = new BehaviorSubject<number>(3);
