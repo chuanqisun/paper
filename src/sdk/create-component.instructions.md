@@ -86,6 +86,56 @@ const Main = createComponent(() => {
 });
 ```
 
+## External State Hoisting Pattern
+
+To share state between components without coupling, create state in the parent component and pass it to child components:
+
+```typescript
+// Child component receives external state
+const Counter = createComponent((props: { count$: Observable<number>; onIncrement: () => void }) => {
+  const template$ = props.count$.pipe(
+    map(
+      (count) => html`
+        <div>
+          <span>Count: ${count}</span>
+          <button @click=${props.onIncrement}>+</button>
+        </div>
+      `,
+    ),
+  );
+
+  return template$;
+});
+
+// Parent component creates and manages state
+const App = createComponent(() => {
+  // 1. Create state in parent
+  const count$ = new BehaviorSubject<number>(0);
+  const increment$ = new Subject<void>();
+
+  // 2. Handle effects
+  const incrementEffect$ = increment$.pipe(tap(() => count$.next(count$.value + 1)));
+
+  // 3. Pass state to child components
+  const template$ = count$.pipe(
+    map(
+      (count) => html`
+        <section>
+          <h1>App (Count: ${count})</h1>
+          ${Counter({
+            count$,
+            onIncrement: () => increment$.next(),
+          })}
+        </section>
+      `,
+    ),
+    mergeWith(incrementEffect$.pipe(ignoreElements())),
+  );
+
+  return template$;
+});
+```
+
 ## Key Concepts
 
 - **Factory function**: Receives props and returns an Observable<TemplateResult> or TemplateResult

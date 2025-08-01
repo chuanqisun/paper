@@ -1,5 +1,5 @@
 ---
-applyTo: "**/moodboard.*,**/generate-artifacts.ts"
+applyTo: "moondboard/**"
 ---
 
 # Feature: Moodboard
@@ -48,5 +48,3 @@ Users can manually add artifacts through a text input field with an "Add Artifac
 2. **Image paste**: The text field also functions as a paste target. When user pastes an image (Ctrl+V or Cmd+V), the pasted image is directly added as an artifact without going through text-to-image generation. The system should extract or generate a description for the pasted image.
 
 The text field should have placeholder text indicating both functions: "Type artifact description or paste image here..."
-
-Manual artifacts follow the same workflow as generated artifacts - they appear as cards in the grid and can be accepted or rejected.

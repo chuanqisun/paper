@@ -1,7 +1,7 @@
 import { html, render } from "lit-html";
 import { combineLatest, concat, of, Subject } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
-import { generateImage, type FluxConnection } from "../lib/generate-image";
+import { generateImage, type FluxConnection } from "../design/generate-image";
 import "./generative-image.css";
 
 type Status = "empty" | "loading" | "error" | "success";

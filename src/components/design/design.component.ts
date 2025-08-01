@@ -2,30 +2,32 @@ import { html } from "lit-html";
 import { repeat } from "lit-html/directives/repeat.js";
 import {
   BehaviorSubject,
+  EMPTY,
+  Observable,
+  Subject,
   catchError,
   combineLatest,
-  EMPTY,
   finalize,
+  ignoreElements,
   map,
   merge,
   mergeMap,
-  Observable,
+  mergeWith,
   of,
-  Subject,
   switchMap,
   take,
   takeUntil,
   tap,
 } from "rxjs";
-import "../elements/generative-image.js";
-import type { Design } from "../lib/generate-designs.ts";
-import { generateManualDesign$, streamDesigns$, streamMockups$, type Mockup } from "../lib/generate-designs.ts";
-import { observe } from "../lib/observe-directive.ts";
-import { type ApiKeys } from "../lib/storage.js";
-import type { ConceptWithId } from "./conceptualize.js";
-import "./design.css";
-import type { ArtifactWithId } from "./moodboard.js";
-import type { ParameterWithId } from "./parameterize.js";
+import { createComponent } from "../../sdk/create-component";
+import type { ConceptWithId } from "../conceptualize/conceptualize.component";
+import type { ApiKeys } from "../connections/storage";
+import "../generative-image/generative-image";
+import type { ArtifactWithId } from "../moodboard/moodboard.component";
+import type { ParameterWithId } from "../parameterize/parameterize.component";
+import "./design.component.css";
+import type { Design } from "./generate-designs";
+import { generateManualDesign$, streamDesigns$, streamMockups$, type Mockup } from "./generate-designs";
 
 export interface DesignWithId extends Design {
   id: string;
@@ -35,29 +37,32 @@ export interface DesignWithId extends Design {
 export interface MockupWithId extends Mockup {
   id: string;
   pinned: boolean;
-  designId: string; // Associate mockup with its parent design
+  designId: string;
 }
 
-export function fitView(
-  apiKeys$: Observable<ApiKeys>,
-  concepts$: Observable<ConceptWithId[]>,
-  artifacts$: Observable<ArtifactWithId[]>,
-  parameters$: Observable<ParameterWithId[]>,
-  parti$: Observable<string>,
-  domain$: Observable<string>,
-) {
-  // Internal state
-  const designs$ = new BehaviorSubject<DesignWithId[]>([]);
+export interface DesignComponentProps {
+  apiKeys$: Observable<ApiKeys>;
+  concepts$: Observable<ConceptWithId[]>;
+  artifacts$: Observable<ArtifactWithId[]>;
+  parameters$: Observable<ParameterWithId[]>;
+  partiText$: Observable<string>;
+  domain$: Observable<string>;
+  designs$: BehaviorSubject<DesignWithId[]>;
+  mockups$: BehaviorSubject<MockupWithId[]>;
+}
+
+export const DesignComponent = createComponent((props: DesignComponentProps) => {
+  // 1. Internal state
+  const { apiKeys$, concepts$, artifacts$, parameters$, partiText$, domain$, designs$, mockups$ } = props;
   const rejectedDesigns$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
-  const mockups$ = new BehaviorSubject<MockupWithId[]>([]);
   const rejectedMockups$ = new BehaviorSubject<MockupWithId[]>([]);
   const renderingDesigns$ = new BehaviorSubject<Set<string>>(new Set());
   const editingMockups$ = new BehaviorSubject<string[]>([]);
   const newDesignIdea$ = new BehaviorSubject<string>("");
   const isGeneratingManualDesign$ = new BehaviorSubject<boolean>(false);
 
-  // Actions
+  // 2. Actions (user interactions)
   const generateDesigns$ = new Subject<void>();
   const stopDesignGeneration$ = new Subject<void>();
   const editDesign$ = new Subject<{ id: string; field: "name" | "parameter"; parameterName?: string; value: string }>();
@@ -79,13 +84,12 @@ export function fitView(
   const pinnedOnlyMockups$ = new Subject<void>();
   const retryMockup$ = new Subject<string>();
 
-  // Generate designs effect
+  // 3. Effects (state changes)
   const generateEffect$ = generateDesigns$.pipe(
     tap(() => isGenerating$.next(true)),
     switchMap(() =>
-      // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([apiKeys$, concepts$, artifacts$, parameters$, parti$, domain$]).pipe(
-        take(1), // Only take the current values, don't react to future changes
+      combineLatest([apiKeys$, concepts$, artifacts$, parameters$, partiText$, domain$]).pipe(
+        take(1),
         tap((e) => console.log("Generating designs with:", e)),
         map(([apiKeys, concepts, artifacts, parameters, parti, domain]) => ({
           parti,
@@ -153,7 +157,6 @@ export function fitView(
     ),
   );
 
-  // Edit design effect
   const editEffect$ = editDesign$.pipe(
     tap(({ id, field, parameterName, value }) => {
       const designs = designs$.value.map((d) => {
@@ -176,7 +179,6 @@ export function fitView(
     }),
   );
 
-  // Pin design effect
   const pinEffect$ = pinDesign$.pipe(
     tap((id) => {
       const designs = designs$.value.map((d) => (d.id === id ? { ...d, pinned: !d.pinned } : d));
@@ -184,7 +186,6 @@ export function fitView(
     }),
   );
 
-  // Reject design effect
   const rejectEffect$ = rejectDesign$.pipe(
     tap((id) => {
       const design = designs$.value.find((d) => d.id === id);
@@ -195,41 +196,35 @@ export function fitView(
     }),
   );
 
-  // Revert rejection effect
   const revertEffect$ = revertRejection$.pipe(
     tap((rejectedDesign) => {
       rejectedDesigns$.next(rejectedDesigns$.value.filter((d) => d !== rejectedDesign));
     }),
   );
 
-  // Clear all rejected effect
   const clearAllRejectedEffect$ = clearAllRejected$.pipe(
     tap(() => {
       rejectedDesigns$.next([]);
     }),
   );
 
-  // Pinned only effect
   const pinnedOnlyEffect$ = pinnedOnly$.pipe(
     tap(() => {
       const currentDesigns = designs$.value;
       const unpinnedDesigns = currentDesigns.filter((d) => !d.pinned);
       const pinnedDesigns = currentDesigns.filter((d) => d.pinned);
 
-      // Add unpinned designs to rejection list
       const newRejectedDesigns = [...rejectedDesigns$.value, ...unpinnedDesigns.map((d) => d.name)];
       rejectedDesigns$.next(newRejectedDesigns);
 
-      // Keep only pinned designs
       designs$.next(pinnedDesigns);
     }),
   );
 
-  // Add manual design effect
   const addManualDesignEffect$ = addManualDesign$.pipe(
     tap(() => isGeneratingManualDesign$.next(true)),
     switchMap(() =>
-      combineLatest([apiKeys$, concepts$, artifacts$, parameters$, parti$, domain$]).pipe(
+      combineLatest([apiKeys$, concepts$, artifacts$, parameters$, partiText$, domain$]).pipe(
         take(1),
         map(([apiKeys, concepts, artifacts, parameters, parti, domain]) => ({
           designIdea: newDesignIdea$.value.trim(),
@@ -292,7 +287,6 @@ export function fitView(
     ),
   );
 
-  // Render mockups effect
   const renderMockupsEffect$ = renderMockups$.pipe(
     tap((designId) => {
       const currentRendering = renderingDesigns$.value;
@@ -371,7 +365,6 @@ export function fitView(
     ),
   );
 
-  // Edit mockup effect
   const editMockupEffect$ = editMockup$.pipe(
     tap(({ id, field, value }) => {
       const mockups = mockups$.value.map((m) => (m.id === id ? { ...m, [field]: value } : m));
@@ -379,7 +372,6 @@ export function fitView(
     }),
   );
 
-  // Pin mockup effect
   const pinMockupEffect$ = pinMockup$.pipe(
     tap((id) => {
       const mockups = mockups$.value.map((m) => (m.id === id ? { ...m, pinned: !m.pinned } : m));
@@ -387,7 +379,6 @@ export function fitView(
     }),
   );
 
-  // Reject mockup effect
   const rejectMockupEffect$ = rejectMockup$.pipe(
     tap((id) => {
       const mockup = mockups$.value.find((m) => m.id === id);
@@ -399,28 +390,23 @@ export function fitView(
     }),
   );
 
-  // Revert mockup rejection effect
   const revertMockupRejectionEffect$ = revertMockupRejection$.pipe(
     tap((rejectedMockupId) => {
       const rejectedMockup = rejectedMockups$.value.find((m) => m.id === rejectedMockupId);
       if (rejectedMockup) {
-        // Remove from rejected list
         const rejected = rejectedMockups$.value.filter((m) => m.id !== rejectedMockupId);
         rejectedMockups$.next(rejected);
-        // Add back to active mockups
         mockups$.next([...mockups$.value, rejectedMockup]);
       }
     }),
   );
 
-  // Clear all rejected mockups effect
   const clearAllRejectedMockupsEffect$ = clearAllRejectedMockups$.pipe(
     tap(() => {
       rejectedMockups$.next([]);
     }),
   );
 
-  // Toggle edit mockup effect
   const toggleEditMockupEffect$ = toggleEditMockup$.pipe(
     tap((id) => {
       const editing = editingMockups$.value;
@@ -432,30 +418,24 @@ export function fitView(
     }),
   );
 
-  // Pinned only mockups effect
   const pinnedOnlyMockupsEffect$ = pinnedOnlyMockups$.pipe(
     tap(() => {
       const currentMockups = mockups$.value;
       const unpinnedMockups = currentMockups.filter((m) => !m.pinned);
       const pinnedMockups = currentMockups.filter((m) => m.pinned);
 
-      // Add unpinned mockups to rejection list
       const newRejectedMockups = [...rejectedMockups$.value, ...unpinnedMockups];
       rejectedMockups$.next(newRejectedMockups);
 
-      // Keep only pinned mockups
       mockups$.next(pinnedMockups);
     }),
   );
 
-  // Retry mockup effect
   const retryMockupEffect$ = retryMockup$.pipe(
     tap((id) => {
-      // Exit edit mode
       const editing = editingMockups$.value.filter((e) => e !== id);
       editingMockups$.next(editing);
 
-      // Find and retry the corresponding generative-image element by mockup ID
       setTimeout(() => {
         const imageElement = document.querySelector(`[data-mockup-id="${id}"] generative-image`) as any;
         if (imageElement && typeof imageElement.retry === "function") {
@@ -465,7 +445,27 @@ export function fitView(
     }),
   );
 
-  // Template
+  const effects$ = merge(
+    generateEffect$,
+    editEffect$,
+    pinEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+    pinnedOnlyEffect$,
+    addManualDesignEffect$,
+    renderMockupsEffect$,
+    editMockupEffect$,
+    pinMockupEffect$,
+    rejectMockupEffect$,
+    revertMockupRejectionEffect$,
+    clearAllRejectedMockupsEffect$,
+    toggleEditMockupEffect$,
+    pinnedOnlyMockupsEffect$,
+    retryMockupEffect$,
+  ).pipe(ignoreElements());
+
+  // 4. Combine state and template
   const template$ = combineLatest([
     designs$,
     rejectedDesigns$,
@@ -577,7 +577,7 @@ export function fitView(
                                                   <textarea
                                                     class="card-edit-textarea"
                                                     .value=${mockup.description}
-                                                    @input=${(e: Event) =>
+                                                    @change=${(e: Event) =>
                                                       editMockup$.next({
                                                         id: mockup.id,
                                                         field: "description",
@@ -763,35 +763,8 @@ export function fitView(
         </div>
       `,
     ),
+    mergeWith(effects$),
   );
 
-  // Merge all effects
-  const effects$ = merge(
-    generateEffect$,
-    editEffect$,
-    pinEffect$,
-    rejectEffect$,
-    revertEffect$,
-    clearAllRejectedEffect$,
-    pinnedOnlyEffect$,
-    addManualDesignEffect$,
-    renderMockupsEffect$,
-    editMockupEffect$,
-    pinMockupEffect$,
-    rejectMockupEffect$,
-    revertMockupRejectionEffect$,
-    clearAllRejectedMockupsEffect$,
-    toggleEditMockupEffect$,
-    pinnedOnlyMockupsEffect$,
-    retryMockupEffect$,
-  );
-
-  const staticTemplate = html`${observe(template$)}`;
-
-  return {
-    fitTemplate: staticTemplate,
-    designs$,
-    mockups$,
-    effects$,
-  };
-}
+  return template$;
+});

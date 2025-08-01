@@ -1,23 +1,28 @@
-import { html, type TemplateResult } from "lit-html";
-import { BehaviorSubject, Subject, map, of } from "rxjs";
+import { html } from "lit-html";
+import { BehaviorSubject, Subject, ignoreElements, map, merge, mergeWith, of } from "rxjs";
 import { catchError, debounceTime, distinctUntilChanged, mergeMap, tap } from "rxjs/operators";
-import { observe } from "../lib/observe-directive";
-import { loadApiKeys, saveApiKeys, type ApiKeys } from "../lib/storage";
-import { testConnection } from "../lib/test-connections";
-import "./connections.css";
+import { createComponent } from "../../sdk/create-component";
+import { observe } from "../../sdk/observe-directive";
+import "./connections.component.css";
+import { saveApiKeys, type ApiKeys } from "./storage";
+import { testConnection } from "./test-connections";
 
-export interface ConnectionsViewResult {
-  connectionsTemplate: TemplateResult;
+export interface ConnectionsComponentProps {
   apiKeys$: BehaviorSubject<ApiKeys>;
 }
 
-export function connectionsView(): ConnectionsViewResult {
-  // Initialize apiKeys observable internally
-  const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
+export const ConnectionsComponent = createComponent((props: ConnectionsComponentProps) => {
+  // 1. Internal state
+  const { apiKeys$ } = props;
+  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
+  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
+  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean }>({});
 
-  // Internal key change and persistence
+  // 2. Actions (user interactions)
   const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
+  const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
 
+  // 3. Effects (state changes)
   const persistKeys$ = apiKeyChange$.pipe(
     debounceTime(300),
     distinctUntilChanged((a, b) => a.provider === b.provider && a.value === b.value),
@@ -29,13 +34,6 @@ export function connectionsView(): ConnectionsViewResult {
     }),
   );
 
-  // Internal test streams
-  const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
-  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
-  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
-  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean }>({});
-
-  // Handle test connections internally
   const handleTestConnection$ = testConnection$.pipe(
     tap(({ provider }) => {
       const currentLoading = testLoading$.value;
@@ -67,9 +65,39 @@ export function connectionsView(): ConnectionsViewResult {
     ),
   );
 
-  // Subscribe to internal streams
-  persistKeys$.subscribe();
-  handleTestConnection$.subscribe();
+  // Helper functions
+  const clearTestResults = (provider: keyof ApiKeys) => {
+    const currentResults = testResults$.value;
+    const currentErrors = testErrors$.value;
+    testResults$.next({ ...currentResults, [provider]: undefined });
+    testErrors$.next({ ...currentErrors, [provider]: undefined });
+  };
+
+  const handleOpenAIChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    apiKeyChange$.next({ provider: "openai", value: input.value });
+    clearTestResults("openai");
+  };
+
+  const handleTogetherChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    apiKeyChange$.next({ provider: "together", value: input.value });
+    clearTestResults("together");
+  };
+
+  const handleTestSubmit = (e: Event) => {
+    e.preventDefault();
+
+    const currentApiKeys = apiKeys$.value;
+    // Test OpenAI first
+    if (currentApiKeys.openai) {
+      testConnection$.next({ provider: "openai" });
+    }
+    // Then test Together.ai
+    if (currentApiKeys.together) {
+      testConnection$.next({ provider: "together" });
+    }
+  };
 
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
@@ -77,6 +105,7 @@ export function connectionsView(): ConnectionsViewResult {
       apiKeys$.pipe(map((apiKeys) => loading.openai || loading.together || (!apiKeys.openai && !apiKeys.together))),
     ),
   );
+
   const buttonText$ = testLoading$.pipe(
     map((loading) => (loading.openai || loading.together ? "Testing..." : "Test Connections")),
   );
@@ -125,70 +154,45 @@ export function connectionsView(): ConnectionsViewResult {
     ),
   );
 
-  const clearTestResults = (provider: keyof ApiKeys) => {
-    const currentResults = testResults$.value;
-    const currentErrors = testErrors$.value;
-    testResults$.next({ ...currentResults, [provider]: undefined });
-    testErrors$.next({ ...currentErrors, [provider]: undefined });
-  };
+  const effects$ = merge(persistKeys$, handleTestConnection$).pipe(ignoreElements());
 
-  const handleOpenAIChange = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    apiKeyChange$.next({ provider: "openai", value: input.value });
-    clearTestResults("openai");
-  };
+  // 4. Combine state and template
+  const template$ = apiKeys$.pipe(
+    map(
+      (apiKeys) => html`
+        <form class="connections-form" @submit=${handleTestSubmit}>
+          <div class="form-field">
+            <label for="openai-key">OpenAI API Key</label>
+            <input
+              id="openai-key"
+              type="password"
+              value=${apiKeys.openai || ""}
+              placeholder="sk-..."
+              @input=${handleOpenAIChange}
+            />
+          </div>
 
-  const handleTogetherChange = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    apiKeyChange$.next({ provider: "together", value: input.value });
-    clearTestResults("together");
-  };
+          <div class="form-field">
+            <label for="together-key">Together.ai API Key</label>
+            <input
+              id="together-key"
+              type="password"
+              value=${apiKeys.together || ""}
+              placeholder="API key for Together.ai"
+              @input=${handleTogetherChange}
+            />
+          </div>
 
-  const handleTestSubmit = (e: Event) => {
-    e.preventDefault();
+          <button type="submit" ?disabled=${observe(isDisabled$)}>${observe(buttonText$)}</button>
 
-    const currentApiKeys = apiKeys$.value;
-    // Test OpenAI first
-    if (currentApiKeys.openai) {
-      testConnection$.next({ provider: "openai" });
-    }
-    // Then test Together.ai
-    if (currentApiKeys.together) {
-      testConnection$.next({ provider: "together" });
-    }
-  };
+          <div class="form-status">
+            <small> OpenAI: ${observe(openaiStatus$)} | Together.ai: ${observe(togetherStatus$)} </small>
+          </div>
+        </form>
+      `,
+    ),
+    mergeWith(effects$),
+  );
 
-  const connectionsTemplate = html`
-    <form class="connections-form" @submit=${handleTestSubmit}>
-      <div class="form-field">
-        <label for="openai-key">OpenAI API Key</label>
-        <input
-          id="openai-key"
-          type="password"
-          value=${apiKeys$.value.openai || ""}
-          placeholder="sk-..."
-          @input=${handleOpenAIChange}
-        />
-      </div>
-
-      <div class="form-field">
-        <label for="together-key">Together.ai API Key</label>
-        <input
-          id="together-key"
-          type="password"
-          value=${apiKeys$.value.together || ""}
-          placeholder="API key for Together.ai"
-          @input=${handleTogetherChange}
-        />
-      </div>
-
-      <button type="submit" ?disabled=${observe(isDisabled$)}>${observe(buttonText$)}</button>
-
-      <div class="form-status">
-        <small> OpenAI: ${observe(openaiStatus$)} | Together.ai: ${observe(togetherStatus$)} </small>
-      </div>
-    </form>
-  `;
-
-  return { connectionsTemplate, apiKeys$ };
-}
+  return template$;
+});

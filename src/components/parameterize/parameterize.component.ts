@@ -7,41 +7,46 @@ import {
   catchError,
   combineLatest,
   finalize,
+  ignoreElements,
   map,
   merge,
+  mergeWith,
   switchMap,
   take,
   takeUntil,
   tap,
 } from "rxjs";
-import type { Parameter } from "../lib/generate-parameters";
-import { regenerateParameterDescription$, streamParameters$ } from "../lib/generate-parameters";
-import { observe } from "../lib/observe-directive";
-import type { ApiKeys } from "../lib/storage";
-import type { ConceptWithId } from "./conceptualize.js";
-import type { ArtifactWithId } from "./moodboard.js";
-import "./parameterize.css";
+import { createComponent } from "../../sdk/create-component";
+import type { ConceptWithId } from "../conceptualize/conceptualize.component";
+import type { ApiKeys } from "../connections/storage";
+import type { ArtifactWithId } from "../moodboard/moodboard.component";
+import type { Parameter } from "./generate-parameters";
+import { regenerateParameterDescription$, streamParameters$ } from "./generate-parameters";
+import "./parameterize.component.css";
 
 export interface ParameterWithId extends Parameter {
   id: string;
   pinned: boolean;
 }
 
-export function parameterizeView(
-  apiKeys$: Observable<ApiKeys>,
-  concepts$: Observable<ConceptWithId[]>,
-  artifacts$: Observable<ArtifactWithId[]>,
-  parti$: Observable<string>,
-) {
-  // Internal state
-  const parameters$ = new BehaviorSubject<ParameterWithId[]>([]);
+export interface ParameterizeComponentProps {
+  apiKeys$: Observable<ApiKeys>;
+  concepts$: Observable<ConceptWithId[]>;
+  artifacts$: Observable<ArtifactWithId[]>;
+  partiText$: Observable<string>;
+  parameters$: BehaviorSubject<ParameterWithId[]>;
+  domain$: BehaviorSubject<string>;
+}
+
+export const ParameterizeComponent = createComponent((props: ParameterizeComponentProps) => {
+  // 1. Internal state
+  const { apiKeys$, concepts$, artifacts$, partiText$, parameters$, domain$ } = props;
   const rejectedParameters$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
-  const domain$ = new BehaviorSubject<string>("");
   const newParameterName$ = new BehaviorSubject<string>("");
   const isGeneratingDescription$ = new BehaviorSubject<boolean>(false);
 
-  // Actions
+  // 2. Actions (user interactions)
   const generateParameters$ = new Subject<void>();
   const stopGeneration$ = new Subject<void>();
   const editParameter$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
@@ -54,16 +59,14 @@ export function parameterizeView(
   const stopAddingParameter$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
 
-  // Update domain effect
+  // 3. Effects (state changes)
   const updateDomainEffect$ = updateDomain$.pipe(tap((domain) => domain$.next(domain)));
 
-  // Generate parameters effect
   const generateEffect$ = generateParameters$.pipe(
     tap(() => isGenerating$.next(true)),
     switchMap(() =>
-      // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([apiKeys$, concepts$, artifacts$, parti$, domain$]).pipe(
-        take(1), // Only take the current values, don't react to future changes
+      combineLatest([apiKeys$, concepts$, artifacts$, partiText$, domain$]).pipe(
+        take(1),
         map(([apiKeys, concepts, artifacts, parti, domain]) => ({
           parti,
           domain,
@@ -129,7 +132,6 @@ export function parameterizeView(
     ),
   );
 
-  // Edit parameter effect
   const editEffect$ = editParameter$.pipe(
     tap(({ id, field, value }) => {
       const parameters = parameters$.value.map((p) => (p.id === id ? { ...p, [field]: value } : p));
@@ -137,7 +139,6 @@ export function parameterizeView(
     }),
   );
 
-  // Pin parameter effect
   const pinEffect$ = pinParameter$.pipe(
     tap((id) => {
       const parameters = parameters$.value.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p));
@@ -145,7 +146,6 @@ export function parameterizeView(
     }),
   );
 
-  // Reject parameter effect
   const rejectEffect$ = rejectParameter$.pipe(
     tap((id) => {
       const parameter = parameters$.value.find((p) => p.id === id);
@@ -158,7 +158,6 @@ export function parameterizeView(
     }),
   );
 
-  // Revert rejection effect
   const revertEffect$ = revertRejection$.pipe(
     tap((rejectedParameter) => {
       const rejected = rejectedParameters$.value.filter((p) => p !== rejectedParameter);
@@ -166,14 +165,12 @@ export function parameterizeView(
     }),
   );
 
-  // Clear all rejected effect
   const clearAllRejectedEffect$ = clearAllRejected$.pipe(
     tap(() => {
       rejectedParameters$.next([]);
     }),
   );
 
-  // Add manual parameter effect
   const addManualEffect$ = addManualParameter$.pipe(
     tap(() => isGeneratingDescription$.next(true)),
     switchMap(() =>
@@ -215,28 +212,36 @@ export function parameterizeView(
     ),
   );
 
-  // Pinned only effect
   const pinnedOnlyEffect$ = pinnedOnly$.pipe(
     tap(() => {
       const currentParameters = parameters$.value;
       const unpinnedParameters = currentParameters.filter((p) => !p.pinned);
       const pinnedParameters = currentParameters.filter((p) => p.pinned);
 
-      // Add unpinned parameters to rejection list
       const newRejectedParameters = [...rejectedParameters$.value, ...unpinnedParameters.map((p) => p.name)];
       rejectedParameters$.next(newRejectedParameters);
 
-      // Keep only pinned parameters
       parameters$.next(pinnedParameters);
     }),
   );
 
-  // Template
+  const effects$ = merge(
+    updateDomainEffect$,
+    generateEffect$,
+    editEffect$,
+    pinEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+    addManualEffect$,
+    pinnedOnlyEffect$,
+  ).pipe(ignoreElements());
+
+  // 4. Combine state and template
   const template$ = combineLatest([
     parameters$,
     rejectedParameters$,
     isGenerating$,
-
     domain$,
     newParameterName$,
     isGeneratingDescription$,
@@ -360,27 +365,8 @@ export function parameterizeView(
         </div>
       `,
     ),
+    mergeWith(effects$),
   );
 
-  // Merge all effects
-  const effects$ = merge(
-    generateEffect$,
-    editEffect$,
-    pinEffect$,
-    rejectEffect$,
-    revertEffect$,
-    clearAllRejectedEffect$,
-    updateDomainEffect$,
-    addManualEffect$,
-    pinnedOnlyEffect$,
-  );
-
-  const staticTemplate = html`${observe(template$)}`;
-
-  return {
-    parameterizeTemplate: staticTemplate,
-    parameters$,
-    domain$,
-    effects$,
-  };
-}
+  return template$;
+});

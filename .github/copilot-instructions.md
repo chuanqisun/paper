@@ -35,37 +35,41 @@ applyTo: "**"
 
 ## File organization
 
-/index.html contains the static structure of the UI
-/src/main.ts is the main logic of the app.
+/index.html contains the app root
+/src/main.ts is the main view and logic of the app.
 /src/lib/ contains lower level functions
-/src/views/ contains UI components that are dynamically rendered
+/src/components/ contains reactive UI components using the createComponent pattern
+/src/views/ contains legacy UI components that are being migrated to /src/components/
 
 ## main.ts
 
 - Top down organization, high level first, low level later
 - Get any static global dom reference first
-- Create observable streams and manipulate them in the middle
-- Subscribe to all the streams at the end
+- Create shared state using BehaviorSubject observables
+- Instantiate components and pass shared state as props
+- Render components to their respective DOM containers
 
 ## RxJS patterns in main.ts
 
-- Use `tap` operator for side effects, keep `subscribe()` callbacks empty
-- All side effects should be handled in the pipeline before the final subscription
-- Create all the observables but do NOT subscribe.
-- In the end, merge all the observables and subscribe once.
+- Shared state is hoisted to main.ts and passed down to components
+- Components handle their own internal state and effects
+- No manual subscriptions needed in main.ts as components manage their own reactive behavior
 
-## lib/\*.ts
+## Components (src/components/)
 
-- They should generally be observables, operators, or pure functions
+- Use the createComponent utility for reactive components
+- Follow the pattern: props -> internal state -> actions -> effects -> template
+- Components receive shared state as Observable props and return reactive templates
+- Effects are handled internally using RxJS merge with ignoreElements()
 
-## views/\*.ts
+## views/\*.ts (legacy)
 
+- These are being migrated to components/
 - They should be pure functions that take data and return lit-html templates
   - Input: any observables it depends on
   - Output: lit-html template, and observables if it created new ones for other components to consume
 - Avoid querying DOM (they are not type checkable). Instead pass in observables as parameters
 
-## RxJS pattern in views
+## lib/\*.ts
 
-- You should hide component's internal state within the viewe function
-- Use the `/src/lib/observe-directive.ts` to render observable inside the lit template, e.g. `<span>${observe(stream$)}</span>`
+- They should generally be observables, operators, or pure functions

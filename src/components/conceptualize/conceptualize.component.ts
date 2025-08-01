@@ -7,33 +7,41 @@ import {
   catchError,
   combineLatest,
   finalize,
+  ignoreElements,
   map,
   merge,
+  mergeWith,
   switchMap,
   take,
   takeUntil,
   tap,
 } from "rxjs";
-import type { Concept } from "../lib/generate-concepts";
-import { regenerateDescription$, streamConcepts$ } from "../lib/generate-concepts";
-import { observe } from "../lib/observe-directive";
-import type { ApiKeys } from "../lib/storage";
-import "./conceptualize.css";
+import { createComponent } from "../../sdk/create-component";
+import type { ApiKeys } from "../connections/storage";
+import "./conceptualize.component.css";
+import type { Concept } from "./generate-concepts";
+import { regenerateDescription$, streamConcepts$ } from "./generate-concepts";
 
 export interface ConceptWithId extends Concept {
   id: string;
   pinned: boolean;
 }
 
-export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Observable<string>) {
-  // Internal state
-  const concepts$ = new BehaviorSubject<ConceptWithId[]>([]);
+export interface ConceptualizeComponentProps {
+  apiKeys$: Observable<ApiKeys>;
+  partiText$: Observable<string>;
+  concepts$: BehaviorSubject<ConceptWithId[]>;
+}
+
+export const ConceptualizeComponent = createComponent((props: ConceptualizeComponentProps) => {
+  // 1. Internal state
+  const { apiKeys$, partiText$, concepts$ } = props;
   const rejectedConcepts$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const newConceptTitle$ = new BehaviorSubject<string>("");
   const isGeneratingDescription$ = new BehaviorSubject<boolean>(false);
 
-  // Actions
+  // 2. Actions (user interactions)
   const generateConcepts$ = new Subject<void>();
   const stopGeneration$ = new Subject<void>();
   const editConcept$ = new Subject<{ id: string; field: "concept" | "description"; value: string }>();
@@ -46,13 +54,12 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
   const stopAddingConcept$ = new Subject<void>();
   const pinnedOnly$ = new Subject<void>();
 
-  // Generate concepts effect
+  // 3. Effects (state changes)
   const generateEffect$ = generateConcepts$.pipe(
     tap(() => isGenerating$.next(true)),
     switchMap(() =>
-      // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([parti$, apiKeys$]).pipe(
-        take(1), // Only take the current values, don't react to future changes
+      combineLatest([partiText$, apiKeys$]).pipe(
+        take(1),
         map(([parti, apiKeys]) => ({ parti, apiKey: apiKeys.openai })),
         switchMap(({ parti, apiKey }) => {
           if (!apiKey) {
@@ -91,7 +98,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     ),
   );
 
-  // Edit concept effect
   const editEffect$ = editConcept$.pipe(
     tap(({ id, field, value }) => {
       const concepts = concepts$.value.map((c) => (c.id === id ? { ...c, [field]: value } : c));
@@ -99,7 +105,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     }),
   );
 
-  // Delete concept effect
   const deleteEffect$ = deleteConcept$.pipe(
     tap((id) => {
       const concepts = concepts$.value.filter((c) => c.id !== id);
@@ -107,7 +112,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     }),
   );
 
-  // Favorite concept effect
   const favoriteEffect$ = favoriteConcept$.pipe(
     tap((id) => {
       const concepts = concepts$.value.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c));
@@ -115,7 +119,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     }),
   );
 
-  // Reject concept effect
   const rejectEffect$ = rejectConcept$.pipe(
     tap((id) => {
       const concept = concepts$.value.find((c) => c.id === id);
@@ -127,7 +130,6 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     }),
   );
 
-  // Revert rejection effect
   const revertEffect$ = revertRejection$.pipe(
     tap((rejectedConcept) => {
       const rejected = rejectedConcepts$.value.filter((c) => c !== rejectedConcept);
@@ -135,14 +137,12 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     }),
   );
 
-  // Clear all rejected effect
   const clearAllRejectedEffect$ = clearAllRejected$.pipe(
     tap(() => {
       rejectedConcepts$.next([]);
     }),
   );
 
-  // Add manual concept effect
   const addManualEffect$ = addManualConcept$.pipe(
     tap(() => isGeneratingDescription$.next(true)),
     switchMap(() =>
@@ -183,23 +183,32 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
     ),
   );
 
-  // Pinned only effect
   const pinnedOnlyEffect$ = pinnedOnly$.pipe(
     tap(() => {
       const currentConcepts = concepts$.value;
       const unpinnedConcepts = currentConcepts.filter((c) => !c.pinned);
       const pinnedConcepts = currentConcepts.filter((c) => c.pinned);
 
-      // Add unpinned concepts to rejection list
       const newRejectedConcepts = [...rejectedConcepts$.value, ...unpinnedConcepts.map((c) => c.concept)];
       rejectedConcepts$.next(newRejectedConcepts);
 
-      // Keep only pinned concepts
       concepts$.next(pinnedConcepts);
     }),
   );
 
-  // Template
+  const effects$ = merge(
+    generateEffect$,
+    editEffect$,
+    deleteEffect$,
+    favoriteEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+    addManualEffect$,
+    pinnedOnlyEffect$,
+  ).pipe(ignoreElements());
+
+  // 4. Combine state and template
   const template$ = combineLatest([
     concepts$,
     rejectedConcepts$,
@@ -311,26 +320,8 @@ export function conceptualMappingView(apiKeys$: Observable<ApiKeys>, parti$: Obs
         </div>
       `,
     ),
+    mergeWith(effects$),
   );
 
-  // Merge all effects
-  const effects$ = merge(
-    generateEffect$,
-    editEffect$,
-    deleteEffect$,
-    favoriteEffect$,
-    rejectEffect$,
-    revertEffect$,
-    clearAllRejectedEffect$,
-    addManualEffect$,
-    pinnedOnlyEffect$,
-  );
-
-  const staticTemplate = html`${observe(template$)}`;
-
-  return {
-    conceptualTemplate: staticTemplate,
-    concepts$,
-    effects$,
-  };
-}
+  return template$;
+});

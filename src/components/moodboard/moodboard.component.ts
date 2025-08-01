@@ -1,31 +1,49 @@
 import { html } from "lit-html";
 import { repeat } from "lit-html/directives/repeat.js";
-import { BehaviorSubject, EMPTY, Observable, Subject, combineLatest, merge } from "rxjs";
-import { catchError, finalize, map, switchMap, take, takeUntil, tap } from "rxjs/operators";
+import {
+  BehaviorSubject,
+  EMPTY,
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  finalize,
+  ignoreElements,
+  map,
+  merge,
+  mergeWith,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+} from "rxjs";
+import { createComponent } from "../../sdk/create-component";
+import type { ConceptWithId } from "../conceptualize/conceptualize.component";
+import type { ApiKeys } from "../connections/storage";
 import {
   fileToDataUrl,
   generateArtifactFromImage$,
   regenerateArtifactDescription$,
   streamArtifacts$,
   type Artifact,
-} from "../lib/generate-artifacts.js";
-import { observe } from "../lib/observe-directive.js";
-import { type ApiKeys } from "../lib/storage.js";
-import type { ConceptWithId } from "./conceptualize.js";
-import "./moodboard.css";
+} from "./generate-artifacts";
+import "./moodboard.component.css";
 
 export interface ArtifactWithId extends Artifact {
   id: string;
   pinned: boolean;
 }
 
-export function moodboardView(
-  apiKeys$: Observable<ApiKeys>,
-  concepts$: Observable<ConceptWithId[]>,
-  parti$: Observable<string>,
-) {
-  // Internal state
-  const artifacts$ = new BehaviorSubject<ArtifactWithId[]>([]);
+export interface MoodboardComponentProps {
+  apiKeys$: Observable<ApiKeys>;
+  concepts$: Observable<ConceptWithId[]>;
+  partiText$: Observable<string>;
+  artifacts$: BehaviorSubject<ArtifactWithId[]>;
+}
+
+export const MoodboardComponent = createComponent((props: MoodboardComponentProps) => {
+  // 1. Internal state
+  const { apiKeys$, concepts$, partiText$, artifacts$ } = props;
   const rejectedArtifacts$ = new BehaviorSubject<string[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const editingArtifacts$ = new BehaviorSubject<string[]>([]);
@@ -33,7 +51,7 @@ export function moodboardView(
   const isGeneratingFromText$ = new BehaviorSubject<boolean>(false);
   const isGeneratingFromImage$ = new BehaviorSubject<boolean>(false);
 
-  // Actions
+  // 2. Actions (user interactions)
   const generateArtifacts$ = new Subject<void>();
   const stopGeneration$ = new Subject<void>();
   const editArtifact$ = new Subject<{ id: string; field: "name" | "description"; value: string }>();
@@ -48,13 +66,12 @@ export function moodboardView(
   const pasteImage$ = new Subject<ClipboardEvent>();
   const retryArtifact$ = new Subject<string>();
 
-  // Generate artifacts effect
+  // 3. Effects (state changes)
   const generateEffect$ = generateArtifacts$.pipe(
     tap(() => isGenerating$.next(true)),
     switchMap(() =>
-      // Take current values at the moment the user action is triggered, not reactive to future changes
-      combineLatest([apiKeys$, concepts$, parti$]).pipe(
-        take(1), // Only take the current values, don't react to future changes
+      combineLatest([apiKeys$, concepts$, partiText$]).pipe(
+        take(1),
         map(([apiKeys, concepts, parti]) => ({
           parti,
           apiKey: apiKeys.openai,
@@ -64,19 +81,19 @@ export function moodboardView(
           if (!apiKey) {
             console.error("OpenAI API key not available");
             isGenerating$.next(false);
-            return [];
+            return EMPTY;
           }
 
           if (!parti) {
             console.error("Parti not found");
             isGenerating$.next(false);
-            return [];
+            return EMPTY;
           }
 
           if (concepts.length === 0) {
             console.error("No accepted concepts available");
             isGenerating$.next(false);
-            return [];
+            return EMPTY;
           }
 
           const existingArtifacts = artifacts$.value.map((a) => a.name);
@@ -94,7 +111,7 @@ export function moodboardView(
             }),
             catchError((error) => {
               console.error("Error generating artifacts:", error);
-              return [];
+              return EMPTY;
             }),
             finalize(() => isGenerating$.next(false)),
           );
@@ -103,7 +120,6 @@ export function moodboardView(
     ),
   );
 
-  // Edit artifact effect
   const editEffect$ = editArtifact$.pipe(
     tap(({ id, field, value }) => {
       const artifacts = artifacts$.value.map((a) => (a.id === id ? { ...a, [field]: value } : a));
@@ -111,7 +127,6 @@ export function moodboardView(
     }),
   );
 
-  // Accept artifact effect
   const acceptEffect$ = acceptArtifact$.pipe(
     tap((id) => {
       const artifacts = artifacts$.value.map((a) => (a.id === id ? { ...a, pinned: !a.pinned } : a));
@@ -119,7 +134,6 @@ export function moodboardView(
     }),
   );
 
-  // Reject artifact effect
   const rejectEffect$ = rejectArtifact$.pipe(
     tap((id) => {
       const artifact = artifacts$.value.find((a) => a.id === id);
@@ -131,7 +145,6 @@ export function moodboardView(
     }),
   );
 
-  // Revert rejection effect
   const revertEffect$ = revertRejection$.pipe(
     tap((rejectedArtifact) => {
       const rejected = rejectedArtifacts$.value.filter((a) => a !== rejectedArtifact);
@@ -139,14 +152,12 @@ export function moodboardView(
     }),
   );
 
-  // Clear all rejected effect
   const clearAllRejectedEffect$ = clearAllRejected$.pipe(
     tap(() => {
       rejectedArtifacts$.next([]);
     }),
   );
 
-  // Toggle edit effect
   const toggleEditEffect$ = toggleEdit$.pipe(
     tap((id) => {
       const editing = editingArtifacts$.value;
@@ -158,23 +169,19 @@ export function moodboardView(
     }),
   );
 
-  // Pinned only effect
   const pinnedOnlyEffect$ = pinnedOnly$.pipe(
     tap(() => {
       const currentArtifacts = artifacts$.value;
       const unpinnedArtifacts = currentArtifacts.filter((a) => !a.pinned);
       const pinnedArtifacts = currentArtifacts.filter((a) => a.pinned);
 
-      // Add unpinned artifacts to rejection list
       const newRejectedArtifacts = [...rejectedArtifacts$.value, ...unpinnedArtifacts.map((a) => a.name)];
       rejectedArtifacts$.next(newRejectedArtifacts);
 
-      // Keep only pinned artifacts
       artifacts$.next(pinnedArtifacts);
     }),
   );
 
-  // Add manual artifact effect (from text description)
   const addManualEffect$ = addManualArtifact$.pipe(
     tap(() => isGeneratingFromText$.next(true)),
     switchMap(() =>
@@ -216,7 +223,6 @@ export function moodboardView(
     ),
   );
 
-  // Paste image effect
   const pasteImageEffect$ = pasteImage$.pipe(
     tap(() => isGeneratingFromImage$.next(true)),
     switchMap((event) =>
@@ -271,14 +277,11 @@ export function moodboardView(
     ),
   );
 
-  // Retry artifact effect
   const retryArtifactEffect$ = retryArtifact$.pipe(
     tap((id) => {
-      // Exit edit mode
       const editing = editingArtifacts$.value.filter((e) => e !== id);
       editingArtifacts$.next(editing);
 
-      // Find and retry the corresponding generative-image element by artifact ID
       setTimeout(() => {
         const imageElement = document.querySelector(`[data-artifact-id="${id}"] generative-image`) as any;
         if (imageElement && typeof imageElement.retry === "function") {
@@ -288,7 +291,21 @@ export function moodboardView(
     }),
   );
 
-  // Template
+  const effects$ = merge(
+    generateEffect$,
+    editEffect$,
+    acceptEffect$,
+    rejectEffect$,
+    revertEffect$,
+    clearAllRejectedEffect$,
+    toggleEditEffect$,
+    pinnedOnlyEffect$,
+    addManualEffect$,
+    pasteImageEffect$,
+    retryArtifactEffect$,
+  ).pipe(ignoreElements());
+
+  // 4. Combine state and template
   const template$ = combineLatest([
     artifacts$,
     rejectedArtifacts$,
@@ -323,7 +340,7 @@ export function moodboardView(
                           <textarea
                             class="card-edit-textarea"
                             .value=${artifact.description}
-                            @input=${(e: Event) =>
+                            @change=${(e: Event) =>
                               editArtifact$.next({
                                 id: artifact.id,
                                 field: "description",
@@ -398,7 +415,6 @@ export function moodboardView(
               .value=${newArtifactDescription}
               @input=${(e: Event) => newArtifactDescription$.next((e.target as HTMLTextAreaElement).value)}
               @paste=${(e: ClipboardEvent) => {
-                // Check if there are files in clipboard
                 const files = Array.from(e.clipboardData?.files || []);
                 const hasImage = files.some((file) => file.type.startsWith("image/"));
                 if (hasImage) {
@@ -446,28 +462,8 @@ export function moodboardView(
         </div>
       `,
     ),
+    mergeWith(effects$),
   );
 
-  // Merge all effects
-  const effects$ = merge(
-    generateEffect$,
-    editEffect$,
-    acceptEffect$,
-    rejectEffect$,
-    revertEffect$,
-    clearAllRejectedEffect$,
-    toggleEditEffect$,
-    pinnedOnlyEffect$,
-    addManualEffect$,
-    pasteImageEffect$,
-    retryArtifactEffect$,
-  );
-
-  const staticTemplate = html`${observe(template$)}`;
-
-  return {
-    visualizeTemplate: staticTemplate,
-    artifacts$,
-    effects$,
-  };
-}
+  return template$;
+});

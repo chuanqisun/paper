@@ -1,5 +1,5 @@
 ---
-applyTo: "**/conceptualize.*, **/generate-concepts.ts"
+applyTo: "conceptualize/**"
 ---
 
 # Feature: Conceptual Map

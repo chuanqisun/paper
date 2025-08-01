@@ -1,7 +1,7 @@
 import { html, type TemplateResult } from "lit-html";
 import { guard } from "lit-html/directives/guard.js";
 import { isObservable, type Observable } from "rxjs";
-import { observe } from "../lib/observe-directive";
+import { observe } from "./observe-directive";
 
 export function createComponent<TProps extends object | undefined = undefined>(
   factory: (params: TProps) => Observable<TemplateResult> | TemplateResult,
