@@ -21,7 +21,8 @@ class ObserveDirective extends AsyncDirective {
   // setValue API each time the value changes
   subscribe(observable: Observable<unknown>) {
     const sub = observable.subscribe((v: unknown) => {
-      this.setValue(v);
+      // Break synchronous execution chain to prevent re-entrancy during render
+      queueMicrotask(() => this.setValue(v));
     });
 
     this.unsubscribe = () => sub.unsubscribe();
