@@ -1,0 +1,28 @@
+.example-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2ch;
+}
+
+.counter-display {
+  text-align: center;
+  padding: 2ch;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 0.25rem;
+}
+
+.count-value {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.counter-controls {
+  display: flex;
+  gap: 1ch;
+  justify-content: center;
+}
+
+.counter-controls button {
+  min-width: 3ch;
+}
