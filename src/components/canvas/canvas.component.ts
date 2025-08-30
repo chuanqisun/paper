@@ -10,7 +10,7 @@ export interface ImageItem {
   y: number;
   width: number;
   height: number;
-  isSelected: boolean;
+  isSelected?: boolean;
 }
 
 export const CanvasComponent = createComponent((props: { images$: BehaviorSubject<ImageItem[]> }) => {
@@ -20,7 +20,7 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
 
   // Actions
   const pasteImage$ = new Subject<string>();
-  const moveImage$ = new Subject<{ id: string; x: number; y: number }>();
+  const moveImage$ = new Subject<{ moves: { id: string; x: number; y: number }[] }>();
 
   // Effects
   const pasteEffect$ = pasteImage$.pipe(
@@ -32,21 +32,23 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
         y: Math.random() * 400,
         width: 200,
         height: 200,
-        isSelected: false,
       };
       props.images$.next([...props.images$.value, newImage]);
     }),
   );
 
   const moveEffect$ = moveImage$.pipe(
-    tap(({ id, x, y }) => {
-      // Persist new position and bring the interacted image to top by reordering to the end
+    tap(({ moves }) => {
       const current = props.images$.value;
-      const moved = current.find((img) => img.id === id);
-      if (!moved) return;
-      const others = current.filter((img) => img.id !== id);
-      const updatedMoved = { ...moved, x, y } as ImageItem;
-      props.images$.next([...others, updatedMoved]);
+      const movedItems = moves
+        .map((move) => {
+          const item = current.find((img) => img.id === move.id);
+          return item ? { ...item, x: move.x, y: move.y } : null;
+        })
+        .filter(Boolean) as ImageItem[];
+      const movedIds = moves.map((m) => m.id);
+      const others = current.filter((img) => !movedIds.includes(img.id));
+      props.images$.next([...others, ...movedItems]);
     }),
   );
 
@@ -58,45 +60,58 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
     const currentImages = props.images$.value;
 
     // Handle selection logic
+    let updatedImages: ImageItem[];
+    const isAlreadySelected = image.isSelected;
+
     if (isCtrlPressed || isShiftPressed) {
       // Toggle selection for multi-select
-      const updatedImages = currentImages.map((img) =>
-        img.id === image.id ? { ...img, isSelected: !img.isSelected } : img,
-      );
-      props.images$.next(updatedImages);
-    } else {
-      // Single select - deselect all others, select this one
-      const updatedImages = currentImages.map((img) => ({
+      updatedImages = currentImages.map((img) => (img.id === image.id ? { ...img, isSelected: !img.isSelected } : img));
+    } else if (!isAlreadySelected) {
+      // Single select - deselect all others, select this one (only if not already selected)
+      updatedImages = currentImages.map((img) => ({
         ...img,
         isSelected: img.id === image.id,
       }));
-      props.images$.next(updatedImages);
+    } else {
+      // If already selected and no modifier, keep current selection
+      updatedImages = currentImages;
     }
+    props.images$.next(updatedImages);
 
-    // Continue with drag logic only if this image is selected
-    const element = e.currentTarget as HTMLElement;
-    const startX = e.clientX - element.offsetLeft;
-    const startY = e.clientY - element.offsetTop;
+    // Check if the clicked image is selected after update
+    const updatedImage = updatedImages.find((img) => img.id === image.id);
+    if (!updatedImage?.isSelected) return;
 
-    // Elevate this element above others immediately on interaction
-    element.style.zIndex = String(++zSeq);
+    // Get all selected items to drag
+    const draggedItems = updatedImages.filter((img) => img.isSelected);
+
+    const canvas = (e.currentTarget as HTMLElement).parentElement as HTMLElement;
+    const draggedData = draggedItems.map((item) => {
+      const el = canvas.querySelector(`.canvas-image[data-id="${item.id}"]`) as HTMLElement;
+      const offsetX = e.clientX - item.x;
+      const offsetY = e.clientY - item.y;
+      el.style.zIndex = String(++zSeq);
+      return { el, offsetX, offsetY, item };
+    });
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const x = moveEvent.clientX - startX;
-      const y = moveEvent.clientY - startY;
-      element.style.left = `${x}px`;
-      element.style.top = `${y}px`;
+      draggedData.forEach(({ el, offsetX, offsetY }) => {
+        const x = moveEvent.clientX - offsetX;
+        const y = moveEvent.clientY - offsetY;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+      });
     };
 
     const handleMouseUp = () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      const rect = element.parentElement?.getBoundingClientRect();
-      if (rect) {
-        const x = parseFloat(element.style.left || "0");
-        const y = parseFloat(element.style.top || "0");
-        moveImage$.next({ id: image.id, x, y });
-      }
+      const newPositions = draggedData.map(({ el, item }) => {
+        const x = parseFloat(el.style.left || "0");
+        const y = parseFloat(el.style.top || "0");
+        return { id: item.id, x, y };
+      });
+      moveImage$.next({ moves: newPositions });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -143,6 +158,7 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
             (image) => html`
               <div
                 class="canvas-image ${image.isSelected ? "selected" : ""}"
+                data-id="${image.id}"
                 style="left: ${image.x}px; top: ${image.y}px; width: ${image.width}px; height: ${image.height}px;"
                 @mousedown=${(e: MouseEvent) => handleMouseDown(image, e)}
               >

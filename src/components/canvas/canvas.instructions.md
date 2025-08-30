@@ -34,8 +34,9 @@ Each element is a real `<div>` element.
 
 - Drag on canvas (not implemented)
 - Drag on selection: move the selected item(s)
+  - Attention to details: the gesture conflicts with click to select item. Make sure click to is implemented on mouse up so we can differentiate move/selection
 - Click on canvas/items, see details in ### Selection
-- Hold Space + drag: panning the canvas
+- Hold Space + drag: panning the canvas (not implemented)
 
 ## Style
 
