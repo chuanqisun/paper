@@ -38,6 +38,10 @@ Each element is a real `<div>` element.
 - Click on canvas/items, see details in ### Selection
 - Hold Space + drag: panning the canvas (not implemented)
 
+### Keyboard interaction
+
+- Delete key: remove selected items
+
 ## Style
 
 Dot matrix grid background, efficiently rendered with repeating background image.

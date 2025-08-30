@@ -26,9 +26,11 @@ const Main = createComponent(() => {
           <button commandfor="connection-dialog" command="show-modal">Setup</button>
         </header>
         <main class="main">${CanvasComponent({ images$, apiKeys$ })}</main>
-        <aside class="app-context-tray">
-          ${selected.length === 1 ? html`<p>Caption: ${selected[0].caption}</p>` : html``}
-        </aside>
+        ${selected.length
+          ? html`<aside class="app-context-tray">
+              <p>${selected.length === 1 ? `Caption: ${selected[0].caption}` : `${selected.length} items`}</p>
+            </aside>`
+          : null}
         <dialog class="connection-form" id="connection-dialog">
           <div class="connections-dialog-body">
             ${ConnectionsComponent({ apiKeys$ })}

@@ -25,6 +25,7 @@ export const CanvasComponent = createComponent(
     // Actions
     const pasteImage$ = new Subject<string>();
     const moveImage$ = new Subject<{ moves: { id: string; x: number; y: number }[] }>();
+    const deleteSelected$ = new Subject<void>();
 
     // Effects
     const pasteEffect$ = pasteImage$.pipe(
@@ -92,6 +93,14 @@ export const CanvasComponent = createComponent(
         const movedIds = moves.map((m) => m.id);
         const others = current.filter((img) => !movedIds.includes(img.id));
         props.images$.next([...others, ...movedItems]);
+      }),
+    );
+
+    const deleteEffect$ = deleteSelected$.pipe(
+      tap(() => {
+        const current = props.images$.value;
+        const updated = current.filter((img) => !img.isSelected);
+        props.images$.next(updated);
       }),
     );
 
@@ -194,11 +203,22 @@ export const CanvasComponent = createComponent(
       }
     };
 
+    // Handle keydown event for delete/backspace
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Delete" || event.key === "Backspace") {
+        const hasSelected = props.images$.value.some((img) => img.isSelected);
+        if (hasSelected) {
+          event.preventDefault();
+          deleteSelected$.next();
+        }
+      }
+    };
+
     // Template
     const template$ = props.images$.pipe(
       map(
         (images) => html`
-          <div class="canvas" tabindex="0" @paste=${handlePaste} @click=${handleCanvasClick}>
+          <div class="canvas" tabindex="0" @paste=${handlePaste} @click=${handleCanvasClick} @keydown=${handleKeyDown}>
             ${images.map(
               (image) => html`
                 <div
@@ -217,6 +237,12 @@ export const CanvasComponent = createComponent(
     );
 
     // Combine template with effects
-    return template$.pipe(mergeWith(pasteEffect$.pipe(ignoreElements()), moveEffect$.pipe(ignoreElements())));
+    return template$.pipe(
+      mergeWith(
+        pasteEffect$.pipe(ignoreElements()),
+        moveEffect$.pipe(ignoreElements()),
+        deleteEffect$.pipe(ignoreElements()),
+      ),
+    );
   },
 );
