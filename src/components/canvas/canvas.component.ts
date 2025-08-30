@@ -10,6 +10,7 @@ export interface ImageItem {
   y: number;
   width: number;
   height: number;
+  caption?: string;
   isSelected?: boolean;
 }
 
