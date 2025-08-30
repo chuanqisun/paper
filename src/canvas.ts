@@ -1,6 +1,7 @@
 import { html, render } from "lit-html";
 import { BehaviorSubject } from "rxjs";
 import "./canvas.css";
+import { CanvasComponent } from "./components/canvas/canvas.component";
 import { ConnectionsComponent } from "./components/connections/connections.component";
 import { loadApiKeys, type ApiKeys } from "./components/connections/storage";
 import { FluxImageElement } from "./components/generative-image/generative-image";
@@ -18,7 +19,7 @@ const Main = createComponent(() => {
     <menu>
       <button commandfor="connection-dialog" command="show-modal">Open Dialog</button>
     </menu>
-    <main class="main"></main>
+    <main class="main">${CanvasComponent()}</main>
     <dialog class="connection-form" id="connection-dialog">
       <div class="connections-dialog-body">
         ${ConnectionsComponent({ apiKeys$ })}
