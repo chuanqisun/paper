@@ -3,7 +3,7 @@ import { BehaviorSubject, Subject, ignoreElements, map, mergeWith, tap } from "r
 import { createComponent } from "../../sdk/create-component";
 import "./canvas.component.css";
 
-interface ImageItem {
+export interface ImageItem {
   id: string;
   src: string;
   x: number;
@@ -12,9 +12,8 @@ interface ImageItem {
   height: number;
 }
 
-export const CanvasComponent = createComponent(() => {
+export const CanvasComponent = createComponent((props: { images$: BehaviorSubject<ImageItem[]> }) => {
   // Internal state
-  const images$ = new BehaviorSubject<ImageItem[]>([]);
   // Local z-index sequence for ephemeral drag stacking without re-render
   let zSeq = 0;
 
@@ -33,19 +32,19 @@ export const CanvasComponent = createComponent(() => {
         width: 200,
         height: 200,
       };
-      images$.next([...images$.value, newImage]);
+      props.images$.next([...props.images$.value, newImage]);
     }),
   );
 
   const moveEffect$ = moveImage$.pipe(
     tap(({ id, x, y }) => {
       // Persist new position and bring the interacted image to top by reordering to the end
-      const current = images$.value;
+      const current = props.images$.value;
       const moved = current.find((img) => img.id === id);
       if (!moved) return;
       const others = current.filter((img) => img.id !== id);
       const updatedMoved = { ...moved, x, y } as ImageItem;
-      images$.next([...others, updatedMoved]);
+      props.images$.next([...others, updatedMoved]);
     }),
   );
 
@@ -101,7 +100,7 @@ export const CanvasComponent = createComponent(() => {
   };
 
   // Template
-  const template$ = images$.pipe(
+  const template$ = props.images$.pipe(
     map(
       (images) => html`
         <div class="canvas" tabindex="0" @paste=${handlePaste}>
