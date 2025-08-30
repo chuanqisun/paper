@@ -16,6 +16,10 @@ A self contained component that renders a full width/height element that serves 
 Use a `<div>` element to render the canvas. Do NOT use real `<canvas>` elements.
 Each element is a real `<div>` element.
 
+## Style
+
+Dot matrix grid background, efficiently rendered with repeating background image.
+
 ## AI event handling
 
 The canvas can trigger the following events

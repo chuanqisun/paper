@@ -3,6 +3,7 @@
   font-size: 14px;
   --color-text: #222;
   --color-text-secondary: #666;
+  --color-text-tertiary: #aaa;
   --color-text-active: #000;
   --color-error: #d73a49;
   --color-error-bg: #fff5f5;
@@ -212,6 +213,8 @@ generative-image {
   background: white;
   border-bottom: 1px solid #eee;
   display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1ch;
 }
