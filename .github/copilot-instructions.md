@@ -9,13 +9,11 @@ applyTo: "**"
 - Functional core with RxJS
 - Effectives are handled on the top layer in main.ts
 - Functions over classes, but use class when internal state is complex
-- Pure functions are in /src/lib/\*.ts
-- Views are templated with lit-html, stored in /src/views/\*.ts
+- Views are templated with lit-html, stored in /src/components/{component-name}/\*.component.ts
 
 ## Workflow
 
-- Do NOT run `npm run dev` for user.
-- Do NOT run `npm run build` for user.
+- Do NOT run commands in terminal unless explicitly requested by the user. In case any package is missing or test/build is needed, remind user to do that in the very end of the task.
 - If user provided new information or changed requirements, you must update .github/copilot-instructions.md and .github/instructions/\*.instructions.md to stay up to date.
 
 ## Coding style

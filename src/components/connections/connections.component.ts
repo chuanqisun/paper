@@ -14,13 +14,13 @@ export interface ConnectionsComponentProps {
 export const ConnectionsComponent = createComponent((props: ConnectionsComponentProps) => {
   // 1. Internal state
   const { apiKeys$ } = props;
-  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
-  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string }>({});
-  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean }>({});
+  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string; gemini?: string }>({});
+  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string; gemini?: string }>({});
+  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean; gemini?: boolean }>({});
 
   // 2. Actions (user interactions)
   const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
-  const testConnection$ = new Subject<{ provider: "openai" | "together" }>();
+  const testConnection$ = new Subject<{ provider: "openai" | "together" | "gemini" }>();
 
   // 3. Effects (state changes)
   const persistKeys$ = apiKeyChange$.pipe(
@@ -85,6 +85,12 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     clearTestResults("together");
   };
 
+  const handleGeminiChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    apiKeyChange$.next({ provider: "gemini", value: input.value });
+    clearTestResults("gemini");
+  };
+
   const handleTestSubmit = (e: Event) => {
     e.preventDefault();
 
@@ -97,17 +103,29 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     if (currentApiKeys.together) {
       testConnection$.next({ provider: "together" });
     }
+    // Then test Gemini
+    if (currentApiKeys.gemini) {
+      testConnection$.next({ provider: "gemini" });
+    }
   };
 
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
     mergeMap((loading) =>
-      apiKeys$.pipe(map((apiKeys) => loading.openai || loading.together || (!apiKeys.openai && !apiKeys.together))),
+      apiKeys$.pipe(
+        map(
+          (apiKeys) =>
+            loading.openai ||
+            loading.together ||
+            loading.gemini ||
+            (!apiKeys.openai && !apiKeys.together && !apiKeys.gemini),
+        ),
+      ),
     ),
   );
 
   const buttonText$ = testLoading$.pipe(
-    map((loading) => (loading.openai || loading.together ? "Testing..." : "Test Connections")),
+    map((loading) => (loading.openai || loading.together || loading.gemini ? "Testing..." : "Test Connections")),
   );
 
   const openaiStatus$ = testLoading$.pipe(
@@ -154,6 +172,28 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     ),
   );
 
+  const geminiStatus$ = testLoading$.pipe(
+    mergeMap((loading) =>
+      testResults$.pipe(
+        mergeMap((results) =>
+          testErrors$.pipe(
+            mergeMap((errors) =>
+              apiKeys$.pipe(
+                map((apiKeys) => {
+                  if (!apiKeys.gemini) return "✗ Not set";
+                  if (loading.gemini) return "Testing...";
+                  if (errors.gemini) return `✗ ${errors.gemini}`;
+                  if (results.gemini) return `✓ ${results.gemini}`;
+                  return "✓ Set";
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   const effects$ = merge(persistKeys$, handleTestConnection$).pipe(ignoreElements());
 
   // 4. Combine state and template
@@ -183,10 +223,23 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
             />
           </div>
 
+          <div class="form-field">
+            <label for="gemini-key">Gemini API Key</label>
+            <input
+              id="gemini-key"
+              type="password"
+              value=${apiKeys.gemini || ""}
+              placeholder="API key for Google Gemini"
+              @input=${handleGeminiChange}
+            />
+          </div>
+
           <button type="submit" ?disabled=${observe(isDisabled$)}>${observe(buttonText$)}</button>
 
           <div class="form-status">
-            <small> OpenAI: ${observe(openaiStatus$)} | Together.ai: ${observe(togetherStatus$)} </small>
+            <small>OpenAI: ${observe(openaiStatus$)}</small><br />
+            <small>Together.ai: ${observe(togetherStatus$)}</small><br />
+            <small>Gemini: ${observe(geminiStatus$)}</small>
           </div>
         </form>
       `,

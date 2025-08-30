@@ -1,10 +1,10 @@
 ---
-applyTo: "src/elements/**/*.ts,src/lib/**/*.ts"
+applyTo: "connections/**/*.ts"
 ---
 
-# AI Image Generation
+# Together AI
 
-## Together.ai docs
+## Image Gen
 
 Models
 
