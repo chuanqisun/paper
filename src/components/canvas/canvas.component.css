@@ -30,6 +30,13 @@
 }
 
 .canvas-image:hover {
-  border-color: var(--color-text-active);
+  outline: 3px solid var(--color-selection-outline);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.canvas-image.selected {
+  outline: 3px solid var(--color-selection-outline);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }

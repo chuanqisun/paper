@@ -11,10 +11,31 @@ A self contained component that renders a full width/height element that serves 
 - User can drag to move
 - Maintain an z order. Last interacted image should be on top
 
-## Implementation
+## Content
 
 Use a `<div>` element to render the canvas. Do NOT use real `<canvas>` elements.
 Each element is a real `<div>` element.
+
+## Behavior
+
+### Selection
+
+- User may select 0, 1, or multiple items on the board
+- Mouse click expresses intent to single select
+- Click on canvas to deselect all
+- Ctrl/Cmd + click to toggle selection during multi-select. Shift + click behaves the same.
+- Selected item should have a prominent outline
+
+### Pasting
+
+- Pasted item should appear near the center of the viewport despite current scroll position of the canvas
+
+### Mouse interaction
+
+- Drag on canvas (not implemented)
+- Drag on selection: move the selected item(s)
+- Click on canvas/items, see details in ### Selection
+- Hold Space + drag: panning the canvas
 
 ## Style
 

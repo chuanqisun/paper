@@ -10,6 +10,7 @@ export interface ImageItem {
   y: number;
   width: number;
   height: number;
+  isSelected: boolean;
 }
 
 export const CanvasComponent = createComponent((props: { images$: BehaviorSubject<ImageItem[]> }) => {
@@ -31,6 +32,7 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
         y: Math.random() * 400,
         width: 200,
         height: 200,
+        isSelected: false,
       };
       props.images$.next([...props.images$.value, newImage]);
     }),
@@ -49,6 +51,29 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
   );
 
   const handleMouseDown = (image: ImageItem, e: MouseEvent) => {
+    e.stopPropagation(); // Prevent canvas click when clicking on image
+
+    const isCtrlPressed = e.ctrlKey || e.metaKey;
+    const isShiftPressed = e.shiftKey;
+    const currentImages = props.images$.value;
+
+    // Handle selection logic
+    if (isCtrlPressed || isShiftPressed) {
+      // Toggle selection for multi-select
+      const updatedImages = currentImages.map((img) =>
+        img.id === image.id ? { ...img, isSelected: !img.isSelected } : img,
+      );
+      props.images$.next(updatedImages);
+    } else {
+      // Single select - deselect all others, select this one
+      const updatedImages = currentImages.map((img) => ({
+        ...img,
+        isSelected: img.id === image.id,
+      }));
+      props.images$.next(updatedImages);
+    }
+
+    // Continue with drag logic only if this image is selected
     const element = e.currentTarget as HTMLElement;
     const startX = e.clientX - element.offsetLeft;
     const startY = e.clientY - element.offsetTop;
@@ -78,6 +103,16 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
     document.addEventListener("mouseup", handleMouseUp);
   };
 
+  // Handle canvas click to deselect all
+  const handleCanvasClick = (e: MouseEvent) => {
+    // Only deselect if clicking directly on canvas (not on an image)
+    if (e.target === e.currentTarget) {
+      const currentImages = props.images$.value;
+      const updatedImages = currentImages.map((img) => ({ ...img, isSelected: false }));
+      props.images$.next(updatedImages);
+    }
+  };
+
   // Handle paste event
   const handlePaste = (event: ClipboardEvent) => {
     const items = event.clipboardData?.items;
@@ -103,11 +138,11 @@ export const CanvasComponent = createComponent((props: { images$: BehaviorSubjec
   const template$ = props.images$.pipe(
     map(
       (images) => html`
-        <div class="canvas" tabindex="0" @paste=${handlePaste}>
+        <div class="canvas" tabindex="0" @paste=${handlePaste} @click=${handleCanvasClick}>
           ${images.map(
             (image) => html`
               <div
-                class="canvas-image"
+                class="canvas-image ${image.isSelected ? "selected" : ""}"
                 style="left: ${image.x}px; top: ${image.y}px; width: ${image.width}px; height: ${image.height}px;"
                 @mousedown=${(e: MouseEvent) => handleMouseDown(image, e)}
               >
