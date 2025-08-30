@@ -21,10 +21,6 @@
   font-family: inherit;
 }
 
-html {
-  scrollbar-gutter: stable;
-}
-
 body {
   color: var(--color-text);
   background: var(--page-background);
@@ -201,4 +197,41 @@ generative-image {
     height: 100%;
     object-fit: cover;
   }
+}
+
+/* App Layout */
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  flex-shrink: 0;
+  padding: 1ch;
+  background: white;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+}
+
+.main {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+}
+
+.app-context-tray {
+  position: fixed;
+  bottom: 4ch;
+  left: 4ch;
+  right: 4ch;
+  background: white;
+  border: 1px solid #eee;
+  padding: 1ch;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1ch;
 }

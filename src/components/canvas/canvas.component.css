@@ -1,9 +1,8 @@
 .canvas {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 2000px;
+  height: 2000px;
   background: var(--page-background);
-  overflow: hidden;
   outline: none;
 }
 
