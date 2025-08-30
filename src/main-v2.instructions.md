@@ -23,3 +23,17 @@ Top and Main areas are on the same level. Try is floating on top
 ## Scroll
 
 Only the main area should have horizontal and vertical scrolling.
+
+# Behavior
+
+## Selection
+
+- User may select 0, 1, or multiple items on the board
+- Mouse click expresses intent to single select
+- Click on canvas to deselect all
+- Ctrl/Cmd + click to toggle selection during multi-select
+- Selected item should have a prominent outline
+
+## Pasting
+
+- Pasted item should appear near the center of the viewport despite current scroll position of the canvas
