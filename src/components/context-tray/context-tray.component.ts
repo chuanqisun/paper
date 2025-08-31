@@ -2,9 +2,9 @@ import { html } from "lit-html";
 import { BehaviorSubject, EMPTY, ignoreElements, map, mergeMap, mergeWith, tap, withLatestFrom } from "rxjs";
 import { createComponent } from "../../sdk/create-component";
 import type { ImageItem } from "../canvas/canvas.component";
+import { getCaption } from "../canvas/get-caption";
 import type { ApiKeys } from "../connections/storage";
 import { blendImages } from "./blend-images";
-import { getCaption } from "../canvas/get-caption";
 import "./context-tray.component.css";
 
 export const ContextTrayComponent = createComponent(
