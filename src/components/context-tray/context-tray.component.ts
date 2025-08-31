@@ -4,6 +4,7 @@ import { createComponent } from "../../sdk/create-component";
 import type { ImageItem } from "../canvas/canvas.component";
 import type { ApiKeys } from "../connections/storage";
 import { blendImages } from "./blend-images";
+import { getCaption } from "../canvas/get-caption";
 import "./context-tray.component.css";
 
 export const ContextTrayComponent = createComponent(
@@ -33,7 +34,7 @@ export const ContextTrayComponent = createComponent(
           return EMPTY;
         }
         return blendImages({ instruction: instruction.trim(), images: selected, apiKey: apiKeys.gemini }).pipe(
-          tap((blendedSrc) => {
+          mergeMap((blendedSrc) => {
             const newImage: ImageItem = {
               id: `blended-${Date.now()}`,
               src: blendedSrc,
@@ -45,6 +46,19 @@ export const ContextTrayComponent = createComponent(
               isSelected: false,
             };
             images$.next([...images$.value, newImage]);
+
+            // Generate caption for the blended image
+            if (apiKeys.openai) {
+              return getCaption(blendedSrc, apiKeys.openai).pipe(
+                tap((caption) => {
+                  const current = images$.value;
+                  const updated = current.map((img) => (img.id === newImage.id ? { ...img, caption } : img));
+                  images$.next(updated);
+                }),
+              );
+            } else {
+              return EMPTY;
+            }
           }),
         );
       }),

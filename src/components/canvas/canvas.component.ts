@@ -1,5 +1,5 @@
 import { html } from "lit-html";
-import { BehaviorSubject, Subject, ignoreElements, map, mergeWith, tap } from "rxjs";
+import { BehaviorSubject, EMPTY, Subject, ignoreElements, map, mergeMap, mergeWith, tap } from "rxjs";
 import { createComponent } from "../../sdk/create-component";
 import type { ApiKeys } from "../connections/storage";
 import "./canvas.component.css";
@@ -29,7 +29,7 @@ export const CanvasComponent = createComponent(
 
     // Effects
     const pasteEffect$ = pasteImage$.pipe(
-      tap((src) => {
+      mergeMap((src) => {
         const newImage: ImageItem = {
           id: `img-${Date.now()}`,
           src,
@@ -44,14 +44,15 @@ export const CanvasComponent = createComponent(
         // Generate caption using OpenAI
         const apiKey = props.apiKeys$.value.openai;
         if (apiKey) {
-          (async () => {
-            const caption = await getCaption(src, apiKey);
-            if (caption) {
+          return getCaption(src, apiKey).pipe(
+            tap((caption) => {
               const current = props.images$.value;
               const updated = current.map((img) => (img.id === newImage.id ? { ...img, caption } : img));
               props.images$.next(updated);
-            }
-          })();
+            }),
+          );
+        } else {
+          return EMPTY;
         }
       }),
     );
