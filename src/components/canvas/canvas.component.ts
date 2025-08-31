@@ -1,9 +1,9 @@
 import { html } from "lit-html";
-import OpenAI from "openai";
 import { BehaviorSubject, Subject, ignoreElements, map, mergeWith, tap } from "rxjs";
 import { createComponent } from "../../sdk/create-component";
 import type { ApiKeys } from "../connections/storage";
 import "./canvas.component.css";
+import { getCaption } from "./get-caption";
 
 export interface ImageItem {
   id: string;
@@ -45,36 +45,11 @@ export const CanvasComponent = createComponent(
         const apiKey = props.apiKeys$.value.openai;
         if (apiKey) {
           (async () => {
-            try {
-              const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
-              const response = await openai.responses.create({
-                model: "gpt-5-mini",
-                reasoning: {
-                  effort: "minimal",
-                },
-                text: {
-                  verbosity: "low",
-                },
-                input: [
-                  {
-                    role: "user",
-                    content: [
-                      { type: "input_text", text: "Describe this image in a short caption." },
-                      { type: "input_image", image_url: src, detail: "auto" },
-                    ],
-                  },
-                ],
-              });
-              const caption = response.output
-                .find((item) => item.type === "message")
-                ?.content.find((item) => item.type === "output_text")?.text;
-              if (!caption) return;
-
+            const caption = await getCaption(src, apiKey);
+            if (caption) {
               const current = props.images$.value;
               const updated = current.map((img) => (img.id === newImage.id ? { ...img, caption } : img));
               props.images$.next(updated);
-            } catch (error) {
-              console.error("Failed to generate caption:", error);
             }
           })();
         }

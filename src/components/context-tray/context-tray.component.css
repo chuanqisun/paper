@@ -1,0 +1,25 @@
+.context-tray {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  padding: 1rem;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.blend-section {
+  margin-top: 1rem;
+}
+
+.blend-section textarea {
+  width: 100%;
+  min-height: 2lh;
+  field-sizing: content;
+  resize: none;
+}
+
+.blend-section button {
+  margin-top: 0.5rem;
+}
