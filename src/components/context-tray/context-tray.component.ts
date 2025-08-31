@@ -14,6 +14,16 @@ export const ContextTrayComponent = createComponent(
     // Actions
     const blend$ = new BehaviorSubject<void>(undefined);
 
+    // Helper function to download an image
+    const downloadImage = (src: string, filename: string) => {
+      const link = document.createElement("a");
+      link.href = src;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     // Effects
     const blendEffect$ = blend$.pipe(
       withLatestFrom(images$, blendInstruction$, apiKeys$),
@@ -46,6 +56,11 @@ export const ContextTrayComponent = createComponent(
         const selected = images.filter((img) => img.isSelected);
         if (selected.length === 0) return html``;
 
+        const downloadUI =
+          selected.length === 1
+            ? html`<button @click=${() => downloadImage(selected[0].src, `${Date.now()}.png`)}>Download</button>`
+            : html``;
+
         const blendUI =
           selected.length >= 2
             ? html`
@@ -62,7 +77,7 @@ export const ContextTrayComponent = createComponent(
 
         return html`<aside class="context-tray">
           <p>${selected.length === 1 ? `Caption: ${selected[0].caption}` : `${selected.length} items`}</p>
-          ${blendUI}
+          ${downloadUI} ${blendUI}
         </aside>`;
       }),
     );
