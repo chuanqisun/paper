@@ -1,7 +1,9 @@
 import { html, render } from "lit-html";
-import { BehaviorSubject, fromEvent, ignoreElements, map, mergeWith, of, tap } from "rxjs";
+import { BehaviorSubject, fromEvent, ignoreElements, map, mergeWith, of, Subject, tap } from "rxjs";
 import { ConnectionsComponent } from "./components/connections/connections.component";
 import { loadApiKeys, type ApiKeys } from "./components/connections/storage";
+import { AskComponent } from "./components/outline/ask.component";
+import type { OutlineItem } from "./components/outline/generate-outline";
 import { OutlineComponent } from "./components/outline/outline.component";
 import "./main.css";
 import { createComponent } from "./sdk/create-component";
@@ -12,6 +14,8 @@ const Main = createComponent(() => {
   const paperContent$ = new BehaviorSubject<string | null>(null);
   const isOutlineEmpty$ = new BehaviorSubject<boolean>(false);
   const tooltipContent$ = new BehaviorSubject<string | null>(null);
+  const itemToAsk$ = new BehaviorSubject<OutlineItem | null>(null);
+  const onAsk$ = new Subject<{ item: OutlineItem; question: string }>();
 
   const emptyPlaceholder = paperContent$.pipe(
     map((content) => (content === null ? html`<div class="empty-placeholder">Paste to start</div>` : null)),
@@ -22,6 +26,12 @@ const Main = createComponent(() => {
     paperContent$,
     isEmpty$: isOutlineEmpty$,
     tooltipContent$,
+    itemToAsk$,
+  });
+
+  const askComponent$ = AskComponent({
+    itemToAsk$,
+    onAsk$,
   });
 
   const paste$ = fromEvent<ClipboardEvent>(document, "paste").pipe(
@@ -44,6 +54,9 @@ const Main = createComponent(() => {
           <button>Close</button>
         </form>
       </div>
+    </dialog>
+    <dialog class="ask-dialog" id="ask-dialog">
+      <div class="ask-dialog-body">${askComponent$}</div>
     </dialog>
   `).pipe(mergeWith(paste$.pipe(ignoreElements())));
 

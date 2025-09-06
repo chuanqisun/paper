@@ -72,3 +72,16 @@
 .outline-item-children {
   padding-left: 1.5em;
 }
+
+.outline-ask {
+  display: flex;
+  padding: 1ch;
+}
+
+.outline-ask-input {
+  flex-grow: 1;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5ch 1ch;
+}

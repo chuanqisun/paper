@@ -32,10 +32,11 @@ export interface OutlineComponentProps {
   paperContent$: BehaviorSubject<string | null>;
   isEmpty$: BehaviorSubject<boolean>;
   tooltipContent$: BehaviorSubject<string | null>;
+  itemToAsk$: BehaviorSubject<OutlineItem | null>;
 }
 
 export const OutlineComponent = createComponent((props: OutlineComponentProps) => {
-  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$ } = props;
+  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$, itemToAsk$ } = props;
 
   const outline$ = new BehaviorSubject<OutlineItem[]>([]);
   const citations$ = new BehaviorSubject<Record<string, Citation>>({});
@@ -251,6 +252,8 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const onGenerateChildren = (item: OutlineItem) => generateChildren$.next(item);
   const onRegenerateItem = (item: OutlineItem) => regenerateItem$.next(item);
   const onClearItem = (item: OutlineItem) => clearItem$.next(item);
+  const onAskQuestion = (item: OutlineItem) => itemToAsk$.next(item);
+
   const onShowTooltip = (item: OutlineItem) => {
     if (!item.citationIds || item.citationIds.length === 0) {
       return;
@@ -315,6 +318,15 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                         Expand
                       </button>`
                     : null}
+                  <button
+                    class="outline-action-button"
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      onAskQuestion(item);
+                    }}
+                  >
+                    Ask
+                  </button>
                   ${item.isExpanding
                     ? html`<button
                         @click=${(e: Event) => {
