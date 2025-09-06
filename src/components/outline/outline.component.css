@@ -30,6 +30,7 @@
   border: none;
   padding: 0;
   text-decoration: underline;
+  line-height: inherit;
   cursor: pointer;
 
   &:hover {
@@ -44,7 +45,6 @@
 }
 
 .outline-item {
-  line-height: 1.4;
   color: var(--color-text);
 
   &.generating {

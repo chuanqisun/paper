@@ -1,3 +1,7 @@
+---
+applyTo: "outline/**"
+---
+
 # Outline feature
 
 An interactive outline that summarizes the document into recursively explorable bullet points.

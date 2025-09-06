@@ -5,6 +5,7 @@ import { Observable } from "rxjs";
 export interface GenerateOutlineParams {
   apiKey: string;
   content: string;
+  parent?: OutlineItem;
 }
 
 export interface OutlineItem {
@@ -12,6 +13,7 @@ export interface OutlineItem {
   bulletPoint: string;
   children: OutlineItem[];
   isExpanded: boolean;
+  isExpanding?: boolean;
 }
 
 export function generateOutline$(params: GenerateOutlineParams): Observable<OutlineItem> {
@@ -42,8 +44,22 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
     // Call OpenAI responses API in structured mode, streaming output
     (async () => {
       try {
+        const parentContext = params.parent
+          ? `
+The user is expanding the following bullet point:
+- ${params.parent.bulletPoint}
+
+Please generate sub-bullet points for this item, based on the original content.
+          `.trim()
+          : "";
+
         const prompt = `
-Distill the following content into a list of high-level bullet points. Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content.
+${
+  params.parent
+    ? "Generate a list of detailed sub-bullet points for the given context."
+    : "Distill the following content into a list of high-level bullet points."
+} Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content.
+${parentContext}
 
 Content to outline:
 \`\`\`
@@ -75,6 +91,7 @@ Respond in this JSON format:
             parser.write(chunk.delta);
           }
         }
+
         subscriber.complete();
       } catch (error) {
         subscriber.error(error);
