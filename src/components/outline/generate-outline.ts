@@ -12,6 +12,7 @@ export interface OutlineItem {
   id: string;
   bulletPoint: string;
   children: OutlineItem[];
+  citations: string[];
   isExpanded: boolean;
   isExpanding?: boolean;
 }
@@ -29,7 +30,7 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
     parser.onValue = (entry) => {
       // Check if this is an array item under the "outline" key
       if (typeof entry.key === "number" && entry.parent && entry.value && typeof entry.value === "object") {
-        const outlineItem = entry.value as unknown as { bulletPoint: string };
+        const outlineItem = entry.value as unknown as { bulletPoint: string; citations: string[] };
         if (outlineItem.bulletPoint) {
           subscriber.next({
             ...outlineItem,
@@ -58,7 +59,7 @@ ${
   params.parent
     ? "Generate a list of detailed sub-bullet points for the given context."
     : "Distill the following content into a list of high-level bullet points."
-} Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content.
+} Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content. Each bullet point must cite at least one piece of text from the source document.
 ${parentContext}
 
 Content to outline:
@@ -66,13 +67,14 @@ Content to outline:
 ${params.content}
 \`\`\`
 
-Generate bullet points that represent the most important ideas from this content. Make each bullet point concise and clear.
+Generate bullet points that represent the most important ideas from this content. Make each bullet point concise and clear. For each bullet point, provide citations from the original content that support it. The citation text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the citation.
 
 Respond in this JSON format:
 {
   "outline": [
     {
-      "bulletPoint": "string"
+      "bulletPoint": "string",
+      "citations": ["string"]
     }
   ]
 }
