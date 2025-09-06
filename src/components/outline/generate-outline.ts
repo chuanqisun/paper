@@ -48,10 +48,10 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
       try {
         const parentContext = params.parent
           ? `
-The user is expanding the following bullet point:
+The user is focusing on the following bullet point:
 - ${params.parent.bulletPoint}
 
-Please generate sub-bullet points for this item, based on the original content.
+Please only generate relevant sub-bullet points that explains, expands, contrasts, contextualizes the point. If none available, respond empty array.
           `.trim()
           : "";
 
@@ -61,7 +61,6 @@ ${
     ? "Generate a list of detailed sub-bullet points for the given context."
     : "Distill the following content into a list of high-level bullet points."
 } Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content. Each bullet point must cite at least one piece of text from the source document.
-${parentContext}
 
 Content to outline:
 \`\`\`
@@ -69,6 +68,7 @@ ${params.content}
 \`\`\`
 
 Generate bullet points that represent the most important ideas from this content. Make each bullet point concise and clear. For each bullet point, provide citations from the original content that support it. The citation text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the citation.
+${parentContext}
 
 Respond in this JSON format:
 {
