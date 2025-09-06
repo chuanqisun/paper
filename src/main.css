@@ -226,6 +226,17 @@ generative-image {
   overflow: auto;
 }
 
+.app-footer {
+  flex-shrink: 0;
+  padding: 1ch;
+  background: white;
+  border-top: 1px solid #eee;
+  color: var(--color-text-secondary);
+  min-height: calc(1.4em + 2ch);
+  display: flex;
+  align-items: center;
+}
+
 .empty-placeholder {
   display: flex;
   align-items: center;
