@@ -52,3 +52,23 @@
     font-style: italic;
   }
 }
+
+.outline-item-self {
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+}
+
+.outline-chevron {
+  font-family: monospace;
+  width: 1.5em;
+  text-align: center;
+}
+
+.outline-bullet-point {
+  flex: 1;
+}
+
+.outline-item-children {
+  padding-left: 1.5em;
+}

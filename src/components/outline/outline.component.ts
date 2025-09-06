@@ -1,4 +1,4 @@
-import { html } from "lit-html";
+import { html, type TemplateResult } from "lit-html";
 import { repeat } from "lit-html/directives/repeat.js";
 import {
   BehaviorSubject,
@@ -83,6 +83,46 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const onRegenerate = () => regenerate$.next();
   const onClear = () => clear$.next();
 
+  const toggleExpand = (itemToToggle: OutlineItem) => {
+    const update = (items: OutlineItem[]): OutlineItem[] => {
+      return items.map((item) => {
+        if (item.id === itemToToggle.id) {
+          return { ...item, isExpanded: !item.isExpanded };
+        }
+        if (item.children && item.children.length > 0) {
+          return { ...item, children: update(item.children) };
+        }
+        return item;
+      });
+    };
+    outline$.next(update(outline$.value));
+  };
+
+  const renderOutlineItem = (item: OutlineItem): TemplateResult => {
+    const hasChildren = item.children && item.children.length > 0;
+    const chevron = hasChildren ? (item.isExpanded ? "▾" : "▸") : "•";
+
+    return html`
+      <div class="outline-item">
+        <div class="outline-item-self" @click=${() => toggleExpand(item)}>
+          <span class="outline-chevron">${chevron}</span>
+          <span class="outline-bullet-point">${item.bulletPoint}</span>
+        </div>
+        ${hasChildren && item.isExpanded
+          ? html`
+              <div class="outline-item-children">
+                ${repeat(
+                  item.children,
+                  (child) => child.id,
+                  (child) => renderOutlineItem(child),
+                )}
+              </div>
+            `
+          : null}
+      </div>
+    `;
+  };
+
   const template$ = combineLatest([outline$, isGenerating$, paperContent$]).pipe(
     tap(([outlineItems, isGenerating, content]) => {
       const hasContent = !!content && content.trim().length > 0;
@@ -120,7 +160,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
             ${repeat(
               outlineItems,
               (item) => item.id,
-              (item) => html`<div class="outline-item">• ${item.bulletPoint}</div>`,
+              (item) => renderOutlineItem(item),
             )}
             ${isGenerating ? html`<div class="outline-item generating">Generating...</div>` : null}
           </div>
