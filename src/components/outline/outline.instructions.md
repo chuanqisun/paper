@@ -8,8 +8,9 @@ An interactive outline that summarizes the document into recursively explorable 
 - Each bullet point in the outline can be clicked to toggle open/close state
 - Each bullet must be trailed by 1 or more source links. A source link is a numbered reference to texts from the original document. The source link number increments as more links are added.
 - When a bullet point is opened, user has options:
-  - Dive in: expand the bullet point into sub-bullets, each bullet point following the same rules as the parent bullet point.
+  - Expand: expand the bullet point into sub-bullets, each bullet point following the same rules as the parent bullet point.
   - Ask: ask a question about this bullet point. When user clicks ask, an inline input box allows user to type in question and get an answer from the LLM. The question itself is a bullet point, and the answer to that question are bullet points too and follows the same rules.
+- For the "Expand" and "Ask" task, the LLM should use the full source text as well as the ancestor bullet points as context. Prompt shall be carefully constructed so LLM has the correct context and focus for the task.
 
 ## Appearance
 
