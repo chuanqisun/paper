@@ -29,7 +29,12 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
       if (typeof entry.key === "number" && entry.parent && entry.value && typeof entry.value === "object") {
         const outlineItem = entry.value as unknown as OutlineItem;
         if (outlineItem.bulletPoint) {
-          subscriber.next({ ...outlineItem, id: crypto.randomUUID(), children: [], isExpanded: false } satisfies OutlineItem);
+          subscriber.next({
+            ...outlineItem,
+            id: crypto.randomUUID(),
+            children: [],
+            isExpanded: false,
+          } satisfies OutlineItem);
         }
       }
     };
