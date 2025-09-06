@@ -3,7 +3,9 @@
   font-size: 14px;
   --color-text: #222;
   --color-text-secondary: #666;
+  --color-text-tertiary: #aaa;
   --color-text-active: #000;
+  --color-selection-outline: #295ea0;
   --color-error: #d73a49;
   --color-error-bg: #fff5f5;
   --color-error-border: #fdaeb7;
@@ -21,10 +23,6 @@
   font-family: inherit;
 }
 
-html {
-  scrollbar-gutter: stable;
-}
-
 body {
   color: var(--color-text);
   background: var(--page-background);
@@ -32,66 +30,15 @@ body {
 }
 
 /* Layout */
-#app {
-  max-width: 90rem;
-  margin: 0 auto;
-  display: grid;
-  gap: calc(4 * var(--spacing-unit));
-  padding: calc(4 * var(--spacing-unit));
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: calc(6 * var(--spacing-unit));
-}
-
-/* Typography */
-h1 {
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-h2 {
-  font-weight: bold;
-  color: var(--color-text);
-}
-
-p {
-  color: var(--color-text-secondary);
-}
-
-/* Header */
-.header {
-  gap: var(--spacing-unit);
-  display: flex;
-  flex-direction: column;
-}
-
-.header summary {
-  cursor: pointer;
-  color: var(--color-text);
-}
-
-.header summary:hover {
-  color: var(--color-text-active);
-}
-
-/* Sections */
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-unit);
-
-  .section-header {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-unit);
-    position: sticky;
-    top: 0;
-    padding-block-start: 2ch;
-    background-color: var(--page-background);
-  }
+dialog:open {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 40rem;
+  max-height: calc(100% - 4rem);
+  width: 100%;
+  height: auto;
 }
 
 /* Form elements */
@@ -166,6 +113,12 @@ input {
 
 input:focus {
   outline: 2px solid var(--color-text-active);
+}
+
+.connections-dialog-body {
+  padding: 2ch;
+  display: grid;
+  gap: 2ch;
 }
 
 /* Card components */
@@ -246,4 +199,43 @@ generative-image {
     height: 100%;
     object-fit: cover;
   }
+}
+
+/* App Layout */
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  flex-shrink: 0;
+  padding: 1ch;
+  background: white;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1ch;
+}
+
+.main {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+}
+
+.app-context-tray {
+  position: fixed;
+  bottom: 4ch;
+  left: 4ch;
+  right: 4ch;
+  background: white;
+  border: 1px solid #eee;
+  padding: 1ch;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1ch;
 }

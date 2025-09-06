@@ -14,13 +14,13 @@ export interface ConnectionsComponentProps {
 export const ConnectionsComponent = createComponent((props: ConnectionsComponentProps) => {
   // 1. Internal state
   const { apiKeys$ } = props;
-  const testResults$ = new BehaviorSubject<{ openai?: string; together?: string; gemini?: string }>({});
-  const testErrors$ = new BehaviorSubject<{ openai?: string; together?: string; gemini?: string }>({});
-  const testLoading$ = new BehaviorSubject<{ openai?: boolean; together?: boolean; gemini?: boolean }>({});
+  const testResults$ = new BehaviorSubject<{ openai?: string; gemini?: string }>({});
+  const testErrors$ = new BehaviorSubject<{ openai?: string; gemini?: string }>({});
+  const testLoading$ = new BehaviorSubject<{ openai?: boolean; gemini?: boolean }>({});
 
   // 2. Actions (user interactions)
   const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
-  const testConnection$ = new Subject<{ provider: "openai" | "together" | "gemini" }>();
+  const testConnection$ = new Subject<{ provider: "openai" | "gemini" }>();
 
   // 3. Effects (state changes)
   const persistKeys$ = apiKeyChange$.pipe(
@@ -79,12 +79,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     clearTestResults("openai");
   };
 
-  const handleTogetherChange = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    apiKeyChange$.next({ provider: "together", value: input.value });
-    clearTestResults("together");
-  };
-
   const handleGeminiChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
     apiKeyChange$.next({ provider: "gemini", value: input.value });
@@ -99,10 +93,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     if (currentApiKeys.openai) {
       testConnection$.next({ provider: "openai" });
     }
-    // Then test Together.ai
-    if (currentApiKeys.together) {
-      testConnection$.next({ provider: "together" });
-    }
     // Then test Gemini
     if (currentApiKeys.gemini) {
       testConnection$.next({ provider: "gemini" });
@@ -112,20 +102,12 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
     mergeMap((loading) =>
-      apiKeys$.pipe(
-        map(
-          (apiKeys) =>
-            loading.openai ||
-            loading.together ||
-            loading.gemini ||
-            (!apiKeys.openai && !apiKeys.together && !apiKeys.gemini),
-        ),
-      ),
+      apiKeys$.pipe(map((apiKeys) => loading.openai || loading.gemini || (!apiKeys.openai && !apiKeys.gemini))),
     ),
   );
 
   const buttonText$ = testLoading$.pipe(
-    map((loading) => (loading.openai || loading.together || loading.gemini ? "Testing..." : "Test Connections")),
+    map((loading) => (loading.openai || loading.gemini ? "Testing..." : "Test Connections")),
   );
 
   const openaiStatus$ = testLoading$.pipe(
@@ -141,28 +123,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
                   if (errors.openai) return `✗ ${errors.openai}`;
                   if (results.openai) return `✓ ${results.openai}`;
                   return "✓ Set";
-                }),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  const togetherStatus$ = testLoading$.pipe(
-    mergeMap((loading) =>
-      testResults$.pipe(
-        mergeMap((results) =>
-          testErrors$.pipe(
-            mergeMap((errors) =>
-              apiKeys$.pipe(
-                map((apiKeys) => {
-                  if (!apiKeys.together) return html`✗ Not set`;
-                  if (loading.together) return html`Testing...`;
-                  if (errors.together) return html`✗ ${errors.together}`;
-                  if (results.together) return html`✓ <a href="${results.together}" target="_blank">View image</a>`;
-                  return html`✓ Set`;
                 }),
               ),
             ),
@@ -213,17 +173,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
           </div>
 
           <div class="form-field">
-            <label for="together-key">Together.ai API Key</label>
-            <input
-              id="together-key"
-              type="password"
-              value=${apiKeys.together || ""}
-              placeholder="API key for Together.ai"
-              @input=${handleTogetherChange}
-            />
-          </div>
-
-          <div class="form-field">
             <label for="gemini-key">Gemini API Key</label>
             <input
               id="gemini-key"
@@ -238,7 +187,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
 
           <div class="form-status">
             <small>OpenAI: ${observe(openaiStatus$)}</small><br />
-            <small>Together.ai: ${observe(togetherStatus$)}</small><br />
             <small>Gemini: ${observe(geminiStatus$)}</small>
           </div>
         </form>
