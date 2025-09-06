@@ -393,7 +393,6 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
       return html`
         <div class="outline-section">
           <div class="outline-header">
-            <h2>Outline</h2>
             <div class="outline-actions">
               ${showStop
                 ? html`<button @click=${onStop} class="outline-action-button stop-button">stop</button>`
