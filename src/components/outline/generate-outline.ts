@@ -59,7 +59,6 @@ Respond in this JSON format:
           input: prompt,
           text: { format: { type: "json_object" }, verbosity: "low" },
           reasoning: { effort: "minimal" },
-          temperature: 0.3,
           stream: true,
         });
 

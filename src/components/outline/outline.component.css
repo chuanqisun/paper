@@ -1,0 +1,54 @@
+.outline-section {
+  padding: 2ch;
+  max-width: 90rem;
+  margin: 0 auto;
+}
+
+.outline-header {
+  margin-bottom: 1ch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    font-weight: bold;
+    color: var(--color-text);
+  }
+}
+
+.outline-actions {
+  display: flex;
+  gap: 1ch;
+}
+
+.outline-action-button {
+  font-weight: normal;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.outline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5ch;
+}
+
+.outline-item {
+  line-height: 1.4;
+  color: var(--color-text);
+
+  &.generating {
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+}
