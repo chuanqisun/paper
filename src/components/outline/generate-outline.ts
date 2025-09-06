@@ -27,7 +27,7 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
     parser.onValue = (entry) => {
       // Check if this is an array item under the "outline" key
       if (typeof entry.key === "number" && entry.parent && entry.value && typeof entry.value === "object") {
-        const outlineItem = entry.value as unknown as OutlineItem;
+        const outlineItem = entry.value as unknown as { bulletPoint: string };
         if (outlineItem.bulletPoint) {
           subscriber.next({
             ...outlineItem,
