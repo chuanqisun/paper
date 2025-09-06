@@ -15,6 +15,7 @@ import {
   mergeMap,
   mergeWith,
   of,
+  scan,
   switchMap,
   take,
   takeUntil,
@@ -22,6 +23,7 @@ import {
 } from "rxjs";
 import { createComponent } from "../../sdk/create-component";
 import type { ApiKeys } from "../connections/storage";
+import type { Citation } from "./citation";
 import { generateOutline$, type OutlineItem } from "./generate-outline";
 import "./outline.component.css";
 
@@ -29,12 +31,14 @@ export interface OutlineComponentProps {
   apiKeys$: BehaviorSubject<ApiKeys>;
   paperContent$: BehaviorSubject<string | null>;
   isEmpty$: BehaviorSubject<boolean>;
+  tooltipContent$: BehaviorSubject<string | null>;
 }
 
 export const OutlineComponent = createComponent((props: OutlineComponentProps) => {
-  const { apiKeys$, paperContent$, isEmpty$ } = props;
+  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$ } = props;
 
   const outline$ = new BehaviorSubject<OutlineItem[]>([]);
+  const citations$ = new BehaviorSubject<Record<string, Citation>>({});
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const stopGeneration$ = new Subject<void>();
   const stopExpanding$ = new Subject<string>();
@@ -50,6 +54,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
     switchMap((content) => {
       if (!content || content.trim().length === 0) {
         outline$.next([]);
+        citations$.next({});
         return EMPTY;
       }
 
@@ -62,15 +67,44 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
 
           isGenerating$.next(true);
           outline$.next([]); // Clear previous outline
+          citations$.next({}); // Clear previous citations
 
           return generateOutline$({
             apiKey: apiKeys.openai,
             content: content,
           }).pipe(
             takeUntil(stopGeneration$),
-            tap((outlineItem) => {
+            scan(
+              (acc, outlineItem) => {
+                const newCitations: Record<string, Citation> = {};
+                const citationIds: string[] = [];
+                for (const citationText of outlineItem.citations) {
+                  const citationId = crypto.randomUUID();
+                  newCitations[citationId] = {
+                    id: Object.keys(acc.citations).length + Object.keys(newCitations).length + 1,
+                    text: citationText,
+                  };
+                  citationIds.push(citationId);
+                }
+                const newItem = { ...outlineItem, citationIds };
+                return {
+                  citations: { ...acc.citations, ...newCitations },
+                  items: [...acc.items, newItem],
+                  newCitations,
+                  newItem,
+                };
+              },
+              {
+                citations: {} as Record<string, Citation>,
+                items: [] as OutlineItem[],
+                newCitations: {} as Record<string, Citation>,
+                newItem: {} as OutlineItem,
+              },
+            ),
+            tap(({ newCitations, newItem }) => {
+              citations$.next({ ...citations$.value, ...newCitations });
               const current = outline$.value;
-              outline$.next([...current, outlineItem]);
+              outline$.next([...current, newItem]);
             }),
             catchError((error) => {
               console.error("Error generating outline:", error);
@@ -163,10 +197,31 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                 parent: itemToExpand,
               }).pipe(
                 takeUntil(stopExpanding$.pipe(filter((id) => id === itemToExpand.id))),
-                tap((child) => {
+                scan(
+                  (acc, outlineItem) => {
+                    const newCitations: Record<string, Citation> = {};
+                    const citationIds: string[] = [];
+                    for (const citationText of outlineItem.citations) {
+                      const citationId = crypto.randomUUID();
+                      newCitations[citationId] = {
+                        id: Object.keys(acc.citations).length + Object.keys(newCitations).length + 1,
+                        text: citationText,
+                      };
+                      citationIds.push(citationId);
+                    }
+                    const newItem = { ...outlineItem, citationIds };
+                    return {
+                      citations: { ...acc.citations, ...newCitations },
+                      newItem,
+                    };
+                  },
+                  { citations: citations$.value, newItem: {} as OutlineItem },
+                ),
+                tap(({ citations: newCitations, newItem }) => {
+                  citations$.next(newCitations);
                   const updatedOutline = updateItemState(outline$.value, itemToExpand.id, (item) => ({
                     ...item,
-                    children: [...item.children, child],
+                    children: [...item.children, newItem],
                   }));
                   outline$.next(updatedOutline);
                 }),
@@ -196,6 +251,13 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const onGenerateChildren = (item: OutlineItem) => generateChildren$.next(item);
   const onRegenerateItem = (item: OutlineItem) => regenerateItem$.next(item);
   const onClearItem = (item: OutlineItem) => clearItem$.next(item);
+  const onShowTooltip = (citationId: string) => {
+    const citation = citations$.value[citationId];
+    if (citation) {
+      tooltipContent$.next(citation.text);
+    }
+  };
+  const onHideTooltip = () => tooltipContent$.next(null);
 
   const toggleBullet = (itemToToggle: OutlineItem) => {
     const update = (items: OutlineItem[]): OutlineItem[] => {
@@ -221,6 +283,14 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
         <div class="outline-item-self" @click=${() => toggleBullet(item)}>
           <span class="outline-chevron">${chevron}</span>
           <span class="outline-bullet-point">${item.bulletPoint}</span>
+          ${item.citationIds?.map((id: string) => {
+            const citation = citations$.value[id];
+            return citation
+              ? html`<span class="citation" @mouseenter=${() => onShowTooltip(id)} @mouseleave=${onHideTooltip}
+                  >[${citation.id}]</span
+                >`
+              : null;
+          })}
         </div>
         ${item.isExpanded
           ? html`
@@ -273,8 +343,8 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                 </div>
                 ${repeat(
                   item.children,
-                  (child) => child.id,
-                  (child) => renderOutlineItem(child),
+                  (child: OutlineItem) => child.id,
+                  (child: OutlineItem) => renderOutlineItem(child),
                 )}
               </div>
             `
@@ -319,8 +389,8 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
           <div class="outline-content">
             ${repeat(
               outlineItems,
-              (item) => item.id,
-              (item) => renderOutlineItem(item),
+              (item: OutlineItem) => item.id,
+              (item: OutlineItem) => renderOutlineItem(item),
             )}
             ${isGenerating ? html`<div class="outline-item generating">Generating...</div>` : null}
           </div>

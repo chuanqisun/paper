@@ -11,6 +11,7 @@ const Main = createComponent(() => {
   const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
   const paperContent$ = new BehaviorSubject<string | null>(null);
   const isOutlineEmpty$ = new BehaviorSubject<boolean>(false);
+  const tooltipContent$ = new BehaviorSubject<string | null>(null);
 
   const emptyPlaceholder = paperContent$.pipe(
     map((content) => (content === null ? html`<div class="empty-placeholder">Paste to start</div>` : null)),
@@ -20,6 +21,7 @@ const Main = createComponent(() => {
     apiKeys$,
     paperContent$,
     isEmpty$: isOutlineEmpty$,
+    tooltipContent$,
   });
 
   const paste$ = fromEvent<ClipboardEvent>(document, "paste").pipe(
@@ -34,6 +36,7 @@ const Main = createComponent(() => {
       <button commandfor="connection-dialog" command="show-modal">Setup</button>
     </header>
     <main class="main">${observe(emptyPlaceholder)} ${outlineComponent$}</main>
+    <footer class="app-footer">${observe(tooltipContent$)}</footer>
     <dialog class="connection-form" id="connection-dialog">
       <div class="connections-dialog-body">
         ${ConnectionsComponent({ apiKeys$ })}

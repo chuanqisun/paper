@@ -13,6 +13,7 @@ export interface OutlineItem {
   bulletPoint: string;
   children: OutlineItem[];
   citations: string[];
+  citationIds?: string[];
   isExpanded: boolean;
   isExpanding?: boolean;
 }
