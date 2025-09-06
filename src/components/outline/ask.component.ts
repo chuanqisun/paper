@@ -1,6 +1,7 @@
 import { html, type TemplateResult } from "lit-html";
 import { BehaviorSubject, combineLatest, ignoreElements, map, mergeWith, type Observable, Subject, tap } from "rxjs";
 import { createComponent } from "../../sdk/create-component";
+import "./ask.component.css";
 import type { OutlineItem } from "./generate-outline";
 
 export interface AskComponentProps {
@@ -16,10 +17,6 @@ export const AskComponent = createComponent((props: AskComponentProps): Observab
 
   const closeEffect$ = closeDialog$.pipe(
     tap(() => {
-      const dialog = document.getElementById("ask-dialog") as HTMLDialogElement;
-      if (dialog) {
-        dialog.close();
-      }
       itemToAsk$.next(null);
       question$.next("");
     }),
@@ -38,41 +35,32 @@ export const AskComponent = createComponent((props: AskComponentProps): Observab
 
   const template$ = combineLatest([itemToAsk$, question$]).pipe(
     map(([item, question]) => {
-      if (!item) {
-        return html``;
-      }
-
       return html`
         <form
+          method="dialog"
           @submit=${(e: Event) => {
-            e.preventDefault();
-            if (question.trim()) {
+            if (!question.trim()) {
+              e.preventDefault();
+              return;
+            }
+
+            if (item) {
               onAsk$.next({ item, question });
             }
-            closeDialog$.next();
           }}
         >
-          <p>Ask a question about: ${item.bulletPoint}</p>
-          <textarea
-            class="outline-ask-input"
-            .value=${question}
-            @input=${(e: Event) => question$.next((e.target as HTMLTextAreaElement).value)}
-            @keydown=${(e: KeyboardEvent) => {
-              if (e.key === "Escape") {
-                closeDialog$.next();
-              }
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                if (question.trim()) {
-                  onAsk$.next({ item, question });
-                }
-                closeDialog$.next();
-              }
-            }}
-          ></textarea>
-          <div class="dialog-actions">
-            <button type="button" @click=${() => closeDialog$.next()}>Cancel</button>
-            <button type="submit" ?disabled=${!question.trim()}>Ask</button>
+          <div>
+            <label for="question">Ask about: ${item?.bulletPoint}</label>
           </div>
+          <br />
+          <input
+            id="question"
+            class="outline-ask-input"
+            type="text"
+            autofocus
+            .value=${question}
+            @input=${(e: Event) => question$.next((e.target as HTMLInputElement).value)}
+          />
         </form>
       `;
     }),

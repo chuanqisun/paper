@@ -412,7 +412,6 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
               (item: OutlineItem) => item.id,
               (item: OutlineItem) => renderOutlineItem(item),
             )}
-            ${isGenerating ? html`<div class="outline-item generating">Generating...</div>` : null}
           </div>
         </div>
       `;

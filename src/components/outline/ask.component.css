@@ -1,0 +1,6 @@
+.ask-dialog {
+  padding: 2ch;
+  input {
+    border: 1px solid #ccc;
+  }
+}
