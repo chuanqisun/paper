@@ -225,17 +225,3 @@ generative-image {
   position: relative;
   overflow: auto;
 }
-
-.app-context-tray {
-  position: fixed;
-  bottom: 4ch;
-  left: 4ch;
-  right: 4ch;
-  background: white;
-  border: 1px solid #eee;
-  padding: 1ch;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 1ch;
-}
