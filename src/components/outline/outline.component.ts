@@ -74,6 +74,8 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
           return generateOutline$({
             apiKey: apiKeys.openai,
             content: content,
+            parent: undefined,
+            fullOutline: [],
           }).pipe(
             takeUntil(stopGeneration$),
             scan(
@@ -188,6 +190,9 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
 
       outline$.next(update(outline$.value));
       itemToAsk$.next(null); // Close the ask dialog
+
+      // Automatically trigger expand on the question
+      generateChildren$.next(questionItem);
     }),
   );
 
@@ -230,6 +235,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                 apiKey: apiKeys.openai,
                 content: content,
                 parent: itemToExpand,
+                fullOutline: outline$.value,
               }).pipe(
                 takeUntil(stopExpanding$.pipe(filter((id) => id === itemToExpand.id))),
                 scan(

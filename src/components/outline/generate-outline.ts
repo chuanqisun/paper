@@ -6,6 +6,7 @@ export interface GenerateOutlineParams {
   apiKey: string;
   content: string;
   parent?: OutlineItem;
+  fullOutline?: OutlineItem[];
 }
 
 export interface OutlineItem {
@@ -16,6 +17,54 @@ export interface OutlineItem {
   citationIds?: string[];
   isExpanded: boolean;
   isExpanding?: boolean;
+}
+
+// Helper function to build the full ancestral context
+function buildParentContext(outline: OutlineItem[], targetItem: OutlineItem): string {
+  if (!targetItem || !outline) return "";
+  
+  const ancestors: OutlineItem[] = [];
+  
+  function findAncestors(items: OutlineItem[], target: OutlineItem, currentPath: OutlineItem[]): boolean {
+    for (const item of items) {
+      const newPath = [...currentPath, item];
+      
+      if (item.id === target.id) {
+        ancestors.push(...currentPath);
+        return true;
+      }
+      
+      if (item.children && item.children.length > 0) {
+        if (findAncestors(item.children, target, newPath)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  findAncestors(outline, targetItem, []);
+  
+  if (ancestors.length === 0) {
+    return `
+The user is focusing on the following bullet point:
+- ${targetItem.bulletPoint}
+
+Please only generate relevant sub-bullet points that explains, expands, contrasts, contextualizes the point. If none available, respond empty array.
+    `.trim();
+  }
+  
+  // Build indented context with all ancestors
+  const contextLines = ["The user is focusing on the following hierarchical context:"];
+  ancestors.forEach((ancestor, index) => {
+    const indent = "  ".repeat(index);
+    contextLines.push(`${indent}- ${ancestor.bulletPoint}`);
+  });
+  contextLines.push(`${"  ".repeat(ancestors.length)}- ${targetItem.bulletPoint}`);
+  contextLines.push("");
+  contextLines.push("Please only generate relevant sub-bullet points that explains, expands, contrasts, contextualizes the deepest point. If none available, respond empty array.");
+  
+  return contextLines.join("\n").trim();
 }
 
 export function generateOutline$(params: GenerateOutlineParams): Observable<OutlineItem> {
@@ -46,14 +95,7 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
     // Call OpenAI responses API in structured mode, streaming output
     (async () => {
       try {
-        const parentContext = params.parent
-          ? `
-The user is focusing on the following bullet point:
-- ${params.parent.bulletPoint}
-
-Please only generate relevant sub-bullet points that explains, expands, contrasts, contextualizes the point. If none available, respond empty array.
-          `.trim()
-          : "";
+        const parentContext = params.parent ? buildParentContext(params.fullOutline || [], params.parent) : "";
 
         const prompt = `
 ${
