@@ -251,10 +251,21 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const onGenerateChildren = (item: OutlineItem) => generateChildren$.next(item);
   const onRegenerateItem = (item: OutlineItem) => regenerateItem$.next(item);
   const onClearItem = (item: OutlineItem) => clearItem$.next(item);
-  const onShowTooltip = (citationId: string) => {
-    const citation = citations$.value[citationId];
-    if (citation) {
-      tooltipContent$.next(citation.text);
+  const onShowTooltip = (item: OutlineItem) => {
+    if (!item.citationIds || item.citationIds.length === 0) {
+      return;
+    }
+    const allCitations = citations$.value;
+    const tooltipText = item.citationIds
+      .map((id) => {
+        const citation = allCitations[id];
+        return citation ? `[${citation.id}]: ${citation.text}` : null;
+      })
+      .filter(Boolean)
+      .join("\n");
+
+    if (tooltipText) {
+      tooltipContent$.next(tooltipText);
     }
   };
   const onHideTooltip = () => tooltipContent$.next(null);
@@ -280,17 +291,14 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
 
     return html`
       <div class="outline-item">
-        <div class="outline-item-self" @click=${() => toggleBullet(item)}>
+        <div
+          class="outline-item-self"
+          @click=${() => toggleBullet(item)}
+          @mouseenter=${() => onShowTooltip(item)}
+          @mouseleave=${onHideTooltip}
+        >
           <span class="outline-chevron">${chevron}</span>
           <span class="outline-bullet-point">${item.bulletPoint}</span>
-          ${item.citationIds?.map((id: string) => {
-            const citation = citations$.value[id];
-            return citation
-              ? html`<span class="citation" @mouseenter=${() => onShowTooltip(id)} @mouseleave=${onHideTooltip}
-                  >[${citation.id}]</span
-                >`
-              : null;
-          })}
         </div>
         ${item.isExpanded
           ? html`

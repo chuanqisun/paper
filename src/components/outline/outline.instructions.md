@@ -20,4 +20,4 @@ An interactive outline that summarizes the document into recursively explorable 
 ## Appearance
 
 - The outline is a nested hierarchical tree. We use monospace characters to render indentation and open/close indicator so we can align the indendation properly.
-- The source links are just simple numbers in square brackets, e.g. [1], [2]. Clicking on the source link will render the source text in a tooltip.
+- When user hovers on the bullet point text, all its citations are rendered in a tooltip, in the format of `[number]: content`.
