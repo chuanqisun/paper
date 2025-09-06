@@ -24,6 +24,7 @@ const Main = createComponent(() => {
 
   const paste$ = fromEvent<ClipboardEvent>(document, "paste").pipe(
     map((event) => event.clipboardData?.getData("text/plain") ?? ""),
+    map((content) => (content.trim() ? content : null)),
     tap((text) => paperContent$.next(text)),
   );
 
