@@ -7,6 +7,7 @@ import {
   catchError,
   combineLatest,
   distinctUntilChanged,
+  filter,
   finalize,
   ignoreElements,
   map,
@@ -36,6 +37,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const outline$ = new BehaviorSubject<OutlineItem[]>([]);
   const isGenerating$ = new BehaviorSubject<boolean>(false);
   const stopGeneration$ = new Subject<void>();
+  const stopExpanding$ = new Subject<string>();
   const regenerate$ = new Subject<void>();
   const clear$ = new Subject<void>();
   const generateChildren$ = new Subject<OutlineItem>();
@@ -160,6 +162,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                 content: content,
                 parent: itemToExpand,
               }).pipe(
+                takeUntil(stopExpanding$.pipe(filter((id) => id === itemToExpand.id))),
                 tap((child) => {
                   const updatedOutline = updateItemState(outline$.value, itemToExpand.id, (item) => ({
                     ...item,
@@ -187,6 +190,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   );
 
   const onStop = () => stopGeneration$.next();
+  const onStopExpanding = (item: OutlineItem) => stopExpanding$.next(item.id);
   const onRegenerate = () => regenerate$.next();
   const onClear = () => clear$.next();
   const onGenerateChildren = (item: OutlineItem) => generateChildren$.next(item);
@@ -233,7 +237,17 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                         Expand
                       </button>`
                     : null}
-                  ${item.isExpanding ? html`<div class="outline-item generating">Expanding...</div>` : null}
+                  ${item.isExpanding
+                    ? html`<button
+                        @click=${(e: Event) => {
+                          e.stopPropagation();
+                          onStopExpanding(item);
+                        }}
+                        class="outline-action-button stop-button"
+                      >
+                        stop
+                      </button>`
+                    : null}
                   ${hasChildren && !item.isExpanding
                     ? html`
                         <button
