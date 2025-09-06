@@ -27,6 +27,7 @@ const Main = createComponent(() => {
     isEmpty$: isOutlineEmpty$,
     tooltipContent$,
     itemToAsk$,
+    onAsk$,
   });
 
   const askComponent$ = AskComponent({

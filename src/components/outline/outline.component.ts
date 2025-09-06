@@ -33,10 +33,11 @@ export interface OutlineComponentProps {
   isEmpty$: BehaviorSubject<boolean>;
   tooltipContent$: BehaviorSubject<string | null>;
   itemToAsk$: BehaviorSubject<OutlineItem | null>;
+  onAsk$: Subject<{ item: OutlineItem; question: string }>;
 }
 
 export const OutlineComponent = createComponent((props: OutlineComponentProps) => {
-  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$, itemToAsk$ } = props;
+  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$, itemToAsk$, onAsk$ } = props;
 
   const outline$ = new BehaviorSubject<OutlineItem[]>([]);
   const citations$ = new BehaviorSubject<Record<string, Citation>>({});
@@ -154,6 +155,39 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
         });
       };
       outline$.next(update(outline$.value));
+    }),
+  );
+
+  const askQuestionEffect$ = onAsk$.pipe(
+    tap(({ item, question }) => {
+      const questionItem: OutlineItem = {
+        id: crypto.randomUUID(),
+        bulletPoint: question,
+        citations: [],
+        citationIds: [],
+        children: [],
+        isExpanded: false,
+        isExpanding: false,
+      };
+
+      const update = (items: OutlineItem[]): OutlineItem[] => {
+        return items.map((currentItem) => {
+          if (currentItem.id === item.id) {
+            return {
+              ...currentItem,
+              children: [...currentItem.children, questionItem],
+              isExpanded: true,
+            };
+          }
+          if (currentItem.children.length > 0) {
+            return { ...currentItem, children: update(currentItem.children) };
+          }
+          return currentItem;
+        });
+      };
+
+      outline$.next(update(outline$.value));
+      itemToAsk$.next(null); // Close the ask dialog
     }),
   );
 
@@ -425,6 +459,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
       generateChildrenEffect$.pipe(ignoreElements()),
       regenerateItemEffect$.pipe(ignoreElements()),
       clearItemEffect$.pipe(ignoreElements()),
+      askQuestionEffect$.pipe(ignoreElements()),
     ),
   );
 });

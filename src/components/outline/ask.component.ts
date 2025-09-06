@@ -24,10 +24,12 @@ export const AskComponent = createComponent((props: AskComponentProps): Observab
 
   const openEffect$ = itemToAsk$.pipe(
     tap((item) => {
-      if (item) {
-        const dialog = document.getElementById("ask-dialog") as HTMLDialogElement;
-        if (dialog) {
+      const dialog = document.getElementById("ask-dialog") as HTMLDialogElement;
+      if (dialog) {
+        if (item) {
           dialog.showModal();
+        } else {
+          dialog.close();
         }
       }
     }),
@@ -46,6 +48,7 @@ export const AskComponent = createComponent((props: AskComponentProps): Observab
 
             if (item) {
               onAsk$.next({ item, question });
+              question$.next(""); // Clear the question input after submission
             }
           }}
         >
