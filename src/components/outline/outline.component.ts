@@ -1,4 +1,5 @@
 import { html } from "lit-html";
+import { repeat } from "lit/directives/repeat.js";
 import {
   BehaviorSubject,
   EMPTY,
@@ -116,7 +117,11 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
             </div>
           </div>
           <div class="outline-content">
-            ${outlineItems.map((item) => html`<div class="outline-item">• ${item.bulletPoint}</div>`)}
+            ${repeat(
+              outlineItems,
+              (item) => item.id,
+              (item) => html`<div class="outline-item">• ${item.bulletPoint}</div>`,
+            )}
             ${isGenerating ? html`<div class="outline-item generating">Generating...</div>` : null}
           </div>
         </div>
