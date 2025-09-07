@@ -170,6 +170,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
         children: [],
         isExpanded: false,
         isExpanding: false,
+        source: "question",
       };
 
       const update = (items: OutlineItem[]): OutlineItem[] => {
