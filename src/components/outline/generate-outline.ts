@@ -118,17 +118,17 @@ Content to outline:
 ${params.content}
 \`\`\`
 
-Gather relevant sources across the content, then distill them to bullet points.
+Gather relevant sources across the content before you distill them to bullet points.
 Source text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the source.
-Generate short bullet points that represent the most important ideas from this content.
+Compress sources into short bullet points that represent the most important ideas from this content.
 ${parentContext}
 
 Respond in this JSON format:
 {
-  "outline": [
+  outline: [
     {
-      "sources": ["string"],
-      "bulletPoint": "string"
+      sources: string[],
+      bulletPoint: string
     }
   ]
 }

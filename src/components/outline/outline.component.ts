@@ -350,24 +350,24 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
                 <div class="outline-actions">
                   ${!hasChildren && !item.isExpanding
                     ? html`<button
-                        class="outline-action-button"
-                        @click=${(e: Event) => {
-                          e.stopPropagation();
-                          onGenerateChildren(item);
-                        }}
-                      >
-                        Expand
-                      </button>`
+                          class="outline-action-button"
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            onGenerateChildren(item);
+                          }}
+                        >
+                          Expand
+                        </button>
+                        <button
+                          class="outline-action-button"
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            onAskQuestion(item);
+                          }}
+                        >
+                          Ask
+                        </button> `
                     : null}
-                  <button
-                    class="outline-action-button"
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      onAskQuestion(item);
-                    }}
-                  >
-                    Ask
-                  </button>
                   ${item.isExpanding
                     ? html`<button
                         @click=${(e: Event) => {

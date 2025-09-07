@@ -232,9 +232,8 @@ generative-image {
   background: white;
   border-top: 1px solid #eee;
   color: var(--color-text-secondary);
-  min-height: calc(1.4em + 2ch);
-  display: flex;
-  align-items: center;
+  height: 20rem;
+  overflow: auto;
 }
 
 .empty-placeholder {
