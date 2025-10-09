@@ -20,59 +20,6 @@ export interface OutlineItem {
   source: "generation" | "question";
 }
 
-// Helper function to build the full ancestral context
-function buildParentContext(outline: OutlineItem[], targetItem: OutlineItem): string {
-  if (!targetItem || !outline) return "";
-
-  const ancestors: OutlineItem[] = [];
-
-  function findAncestors(items: OutlineItem[], target: OutlineItem, currentPath: OutlineItem[]): boolean {
-    for (const item of items) {
-      const newPath = [...currentPath, item];
-
-      if (item.id === target.id) {
-        ancestors.push(...currentPath);
-        return true;
-      }
-
-      if (item.children && item.children.length > 0) {
-        if (findAncestors(item.children, target, newPath)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  findAncestors(outline, targetItem, []);
-
-  if (ancestors.length === 0) {
-    return `
-The user is focusing on the following bullet point:
-- ${targetItem.bulletPoint}
-
-Please only generate relevant points that explains, expands, contrasts, contextualizes the point. If none available, respond empty array.
-    `.trim();
-  }
-
-  // Build indented context with all ancestors
-  const contextLines =
-    targetItem.source === "question"
-      ? ["The user is asking a question in the following context:"]
-      : ["The user is focusing on the following context:"];
-  ancestors.forEach((ancestor, index) => {
-    const indent = "  ".repeat(index);
-    contextLines.push(`${indent}- ${ancestor.bulletPoint}`);
-  });
-  contextLines.push(`${"  ".repeat(ancestors.length)}- ${targetItem.bulletPoint}`);
-  contextLines.push("");
-  contextLines.push(
-    "Please only generate relevant points that explains, expands, contrasts, contextualizes the deepest point. If none available, respond empty array.",
-  );
-
-  return contextLines.join("\n").trim();
-}
-
 export function generateOutline$(params: GenerateOutlineParams): Observable<OutlineItem> {
   return new Observable<OutlineItem>((subscriber) => {
     const openai = new OpenAI({
@@ -174,4 +121,57 @@ Respond in this JSON format:
       }
     })();
   });
+}
+
+// Helper function to build the full ancestral context
+function buildParentContext(outline: OutlineItem[], targetItem: OutlineItem): string {
+  if (!targetItem || !outline) return "";
+
+  const ancestors: OutlineItem[] = [];
+
+  function findAncestors(items: OutlineItem[], target: OutlineItem, currentPath: OutlineItem[]): boolean {
+    for (const item of items) {
+      const newPath = [...currentPath, item];
+
+      if (item.id === target.id) {
+        ancestors.push(...currentPath);
+        return true;
+      }
+
+      if (item.children && item.children.length > 0) {
+        if (findAncestors(item.children, target, newPath)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  findAncestors(outline, targetItem, []);
+
+  if (ancestors.length === 0) {
+    return `
+The user is focusing on the following bullet point:
+- ${targetItem.bulletPoint}
+
+Please only generate relevant points that explains, expands, contrasts, contextualizes the point. If none available, respond empty array.
+    `.trim();
+  }
+
+  // Build indented context with all ancestors
+  const contextLines =
+    targetItem.source === "question"
+      ? ["The user is asking a question in the following context:"]
+      : ["The user is focusing on the following context:"];
+  ancestors.forEach((ancestor, index) => {
+    const indent = "  ".repeat(index);
+    contextLines.push(`${indent}- ${ancestor.bulletPoint}`);
+  });
+  contextLines.push(`${"  ".repeat(ancestors.length)}- ${targetItem.bulletPoint}`);
+  contextLines.push("");
+  contextLines.push(
+    "Please only generate relevant points that explains, expands, contrasts, contextualizes the deepest point. If none available, respond empty array.",
+  );
+
+  return contextLines.join("\n").trim();
 }
