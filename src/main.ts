@@ -1,5 +1,5 @@
 import { html, render } from "lit-html";
-import { BehaviorSubject, fromEvent, ignoreElements, map, mergeWith, of, Subject, tap } from "rxjs";
+import { BehaviorSubject, filter, fromEvent, ignoreElements, map, mergeWith, of, Subject, tap } from "rxjs";
 import { ConnectionsComponent } from "./components/connections/connections.component";
 import { loadApiKeys, type ApiKeys } from "./components/connections/storage";
 import { AskComponent } from "./components/outline/ask.component";
@@ -36,6 +36,10 @@ const Main = createComponent(() => {
   });
 
   const paste$ = fromEvent<ClipboardEvent>(document, "paste").pipe(
+    filter((event) => {
+      const target = event.target as HTMLElement;
+      return !(target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.contentEditable === "true");
+    }),
     map((event) => event.clipboardData?.getData("text/plain") ?? ""),
     map((content) => (content.trim() ? content : null)),
     tap((text) => paperContent$.next(text)),
