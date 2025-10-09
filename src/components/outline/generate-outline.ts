@@ -105,23 +105,29 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
       try {
         const parentContext = params.parent ? buildParentContext(params.fullOutline ?? [], params.parent) : "";
 
-        const prompt = `${
+        const developerPrompt = `
+Help user outline the following content:
+
+\`\`\`
+${params.content.trim()}
+\`\`\`       
+        `.trim();
+
+        const userPrompt = `${
           params.parent && params.parent.source === "question"
-            ? `The user has asked a question "${params.parent.bulletPoint}". Generate a list of bullet points that directly answer this question.`
+            ? `Help me answer the question "${params.parent.bulletPoint}". Generate a list of bullet points that directly answer this question.`
             : params.parent
-              ? `The user wants to expand on "${params.parent.bulletPoint}". Generate a list of bullet points that directly address this point.`
+              ? `Expand on "${params.parent.bulletPoint}". Generate a list of bullet points that directly address this point.`
               : "Distill the following content into a list of high-level bullet points."
         } Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content. Each bullet point must cite at least one piece of text from the source document.
 
-Content to outline:
-\`\`\`
-${params.content}
-\`\`\`
-
 Gather relevant sources across the content before you distill them to bullet points.
 Source text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the source.
-Compress sources into short bullet points that represent the most important ideas from this content.
+Compress sources into short bullet points that represent the most important ideas from this content:
+
+\`\`\`
 ${parentContext}
+\`\`\`
 
 Respond in this JSON format:
 {
@@ -136,15 +142,29 @@ Respond in this JSON format:
 
         const responseStream = await openai.responses.create({
           model: "gpt-5-mini",
-          input: prompt,
+          input: [
+            {
+              role: "developer",
+              content: developerPrompt,
+            },
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
           text: { format: { type: "json_object" }, verbosity: "low" },
           reasoning: { effort: "minimal" },
           stream: true,
+          prompt_cache_key: "paper",
         });
 
         for await (const chunk of responseStream) {
           if (chunk.type === "response.output_text.delta") {
             parser.write(chunk.delta);
+          }
+
+          if (chunk.type === "response.completed") {
+            console.log("[usage]", chunk.response.usage);
           }
         }
 
