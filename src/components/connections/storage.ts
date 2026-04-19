@@ -1,7 +1,6 @@
 export interface ApiKeys {
   openai?: string;
   together?: string;
-  gemini?: string;
 }
 
 const STORAGE_KEY = "moodboard-ai-api-keys";

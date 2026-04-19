@@ -14,13 +14,13 @@ export interface ConnectionsComponentProps {
 export const ConnectionsComponent = createComponent((props: ConnectionsComponentProps) => {
   // 1. Internal state
   const { apiKeys$ } = props;
-  const testResults$ = new BehaviorSubject<{ openai?: string; gemini?: string }>({});
-  const testErrors$ = new BehaviorSubject<{ openai?: string; gemini?: string }>({});
-  const testLoading$ = new BehaviorSubject<{ openai?: boolean; gemini?: boolean }>({});
+  const testResults$ = new BehaviorSubject<{ openai?: string }>({});
+  const testErrors$ = new BehaviorSubject<{ openai?: string }>({});
+  const testLoading$ = new BehaviorSubject<{ openai?: boolean }>({});
 
   // 2. Actions (user interactions)
   const apiKeyChange$ = new Subject<{ provider: keyof ApiKeys; value: string }>();
-  const testConnection$ = new Subject<{ provider: "openai" | "gemini" }>();
+  const testConnection$ = new Subject<{ provider: "openai" }>();
 
   // 3. Effects (state changes)
   const persistKeys$ = apiKeyChange$.pipe(
@@ -79,36 +79,21 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
     clearTestResults("openai");
   };
 
-  const handleGeminiChange = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    apiKeyChange$.next({ provider: "gemini", value: input.value });
-    clearTestResults("gemini");
-  };
-
   const handleTestSubmit = (e: Event) => {
     e.preventDefault();
 
     const currentApiKeys = apiKeys$.value;
-    // Test OpenAI first
     if (currentApiKeys.openai) {
       testConnection$.next({ provider: "openai" });
-    }
-    // Then test Gemini
-    if (currentApiKeys.gemini) {
-      testConnection$.next({ provider: "gemini" });
     }
   };
 
   // Derived observables for template
   const isDisabled$ = testLoading$.pipe(
-    mergeMap((loading) =>
-      apiKeys$.pipe(map((apiKeys) => loading.openai || loading.gemini || (!apiKeys.openai && !apiKeys.gemini))),
-    ),
+    mergeMap((loading) => apiKeys$.pipe(map((apiKeys) => loading.openai || !apiKeys.openai))),
   );
 
-  const buttonText$ = testLoading$.pipe(
-    map((loading) => (loading.openai || loading.gemini ? "Testing..." : "Test Connections")),
-  );
+  const buttonText$ = testLoading$.pipe(map((loading) => (loading.openai ? "Testing..." : "Test Connection")));
 
   const openaiStatus$ = testLoading$.pipe(
     mergeMap((loading) =>
@@ -122,28 +107,6 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
                   if (loading.openai) return `Testing...`;
                   if (errors.openai) return `✗ ${errors.openai}`;
                   if (results.openai) return `✓ ${results.openai}`;
-                  return "✓ Set";
-                }),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  const geminiStatus$ = testLoading$.pipe(
-    mergeMap((loading) =>
-      testResults$.pipe(
-        mergeMap((results) =>
-          testErrors$.pipe(
-            mergeMap((errors) =>
-              apiKeys$.pipe(
-                map((apiKeys) => {
-                  if (!apiKeys.gemini) return "✗ Not set";
-                  if (loading.gemini) return "Testing...";
-                  if (errors.gemini) return `✗ ${errors.gemini}`;
-                  if (results.gemini) return `✓ ${results.gemini}`;
                   return "✓ Set";
                 }),
               ),
@@ -172,22 +135,10 @@ export const ConnectionsComponent = createComponent((props: ConnectionsComponent
             />
           </div>
 
-          <div class="form-field">
-            <label for="gemini-key">Gemini API Key</label>
-            <input
-              id="gemini-key"
-              type="password"
-              value=${apiKeys.gemini || ""}
-              placeholder="API key for Google Gemini"
-              @input=${handleGeminiChange}
-            />
-          </div>
-
           <button type="submit" ?disabled=${observe(isDisabled$)}>${observe(buttonText$)}</button>
 
           <div class="form-status">
-            <small>OpenAI: ${observe(openaiStatus$)}</small><br />
-            <small>Gemini: ${observe(geminiStatus$)}</small>
+            <small>OpenAI: ${observe(openaiStatus$)}</small>
           </div>
         </form>
       `,
