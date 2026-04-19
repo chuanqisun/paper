@@ -88,7 +88,7 @@ Respond in this JSON format:
         `.trim();
 
         const responseStream = await openai.responses.create({
-          model: "gpt-5-mini",
+          model: "gpt-5.4-mini",
           input: [
             {
               role: "developer",
@@ -100,7 +100,7 @@ Respond in this JSON format:
             },
           ],
           text: { format: { type: "json_object" }, verbosity: "low" },
-          reasoning: { effort: "minimal" },
+          reasoning: { effort: "none" },
           stream: true,
           prompt_cache_key: "paper",
         });

@@ -16,10 +16,10 @@ export function testOpenAIConnection(apiKey: string): Observable<string> {
     });
 
     const response = await openai.responses.create({
-      model: "gpt-5-nano",
+      model: "gpt-5.4-nano",
       input: "Please respond with exactly 'OpenAI test success!'",
       max_output_tokens: 32,
-      reasoning: { effort: "minimal" },
+      reasoning: { effort: "none" },
       text: { verbosity: "low" },
     });
 
