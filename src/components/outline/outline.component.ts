@@ -21,6 +21,7 @@ import {
   takeUntil,
   tap,
 } from "rxjs";
+import { hasPaperInput, type PaperInput } from "../../lib/paper-input";
 import { createComponent } from "../../sdk/create-component";
 import type { ApiKeys } from "../connections/storage";
 import type { Citation } from "./citation";
@@ -29,7 +30,7 @@ import "./outline.component.css";
 
 export interface OutlineComponentProps {
   apiKeys$: BehaviorSubject<ApiKeys>;
-  paperContent$: BehaviorSubject<string | null>;
+  paperInput$: BehaviorSubject<PaperInput | null>;
   isEmpty$: BehaviorSubject<boolean>;
   tooltipContent$: BehaviorSubject<string | null>;
   itemToAsk$: BehaviorSubject<OutlineItem | null>;
@@ -37,7 +38,7 @@ export interface OutlineComponentProps {
 }
 
 export const OutlineComponent = createComponent((props: OutlineComponentProps) => {
-  const { apiKeys$, paperContent$, isEmpty$, tooltipContent$, itemToAsk$, onAsk$ } = props;
+  const { apiKeys$, paperInput$, isEmpty$, tooltipContent$, itemToAsk$, onAsk$ } = props;
 
   const outline$ = new BehaviorSubject<OutlineItem[]>([]);
   const citations$ = new BehaviorSubject<Record<string, Citation>>({});
@@ -50,11 +51,11 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
   const regenerateItem$ = new Subject<OutlineItem>();
   const clearItem$ = new Subject<OutlineItem>();
 
-  const generationTrigger$ = paperContent$.pipe(distinctUntilChanged());
+  const generationTrigger$ = paperInput$.pipe(distinctUntilChanged());
 
-  const generateOutlineEffect$ = merge(generationTrigger$, regenerate$.pipe(map(() => paperContent$.value))).pipe(
-    switchMap((content) => {
-      if (!content || content.trim().length === 0) {
+  const generateOutlineEffect$ = merge(generationTrigger$, regenerate$.pipe(map(() => paperInput$.value))).pipe(
+    switchMap((paperInput) => {
+      if (!hasPaperInput(paperInput)) {
         outline$.next([]);
         citations$.next({});
         return EMPTY;
@@ -73,7 +74,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
 
           return generateOutline$({
             apiKey: apiKeys.openai,
-            content: content,
+            input: paperInput,
             parent: undefined,
             fullOutline: [],
           }).pipe(
@@ -123,7 +124,7 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
 
   const stopGenerationEffect$ = stopGeneration$.pipe(tap(() => isGenerating$.next(false)));
 
-  const clearEffect$ = clear$.pipe(tap(() => paperContent$.next(null)));
+  const clearEffect$ = clear$.pipe(tap(() => paperInput$.next(null)));
 
   const regenerateItemEffect$ = regenerateItem$.pipe(
     tap((itemToRegenerate) => {
@@ -225,16 +226,16 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
           outline$.next(updatedOutline);
         }),
         switchMap(() =>
-          combineLatest([apiKeys$, paperContent$]).pipe(
+          combineLatest([apiKeys$, paperInput$]).pipe(
             take(1),
-            switchMap(([apiKeys, content]) => {
-              if (!apiKeys.openai || !content) {
+            switchMap(([apiKeys, paperInput]) => {
+              if (!apiKeys.openai || !paperInput) {
                 return EMPTY;
               }
 
               return generateOutline$({
                 apiKey: apiKeys.openai,
-                content: content,
+                input: paperInput,
                 parent: itemToExpand,
                 fullOutline: outline$.value,
               }).pipe(
@@ -414,14 +415,14 @@ export const OutlineComponent = createComponent((props: OutlineComponentProps) =
     `;
   };
 
-  const template$ = combineLatest([outline$, isGenerating$, paperContent$]).pipe(
-    tap(([outlineItems, isGenerating, content]) => {
-      const hasContent = !!content && content.trim().length > 0;
+  const template$ = combineLatest([outline$, isGenerating$, paperInput$]).pipe(
+    tap(([outlineItems, isGenerating, paperInput]) => {
+      const hasContent = hasPaperInput(paperInput);
       const hasOutline = outlineItems.length > 0;
       isEmpty$.next(!hasOutline && !isGenerating && hasContent);
     }),
-    map(([outlineItems, isGenerating, content]) => {
-      const hasContent = content && content.trim().length > 0;
+    map(([outlineItems, isGenerating, paperInput]) => {
+      const hasContent = hasPaperInput(paperInput);
       const hasOutline = outlineItems.length > 0;
 
       if (!hasContent && !isGenerating) {

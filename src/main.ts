@@ -5,25 +5,44 @@ import { loadApiKeys, type ApiKeys } from "./components/connections/storage";
 import { AskComponent } from "./components/outline/ask.component";
 import type { OutlineItem } from "./components/outline/generate-outline";
 import { OutlineComponent } from "./components/outline/outline.component";
+import { normalizePastedPaperInput, pickPaperInput, type PaperInput } from "./lib/paper-input";
 import "./main.css";
 import { createComponent } from "./sdk/create-component";
 import { observe } from "./sdk/observe-directive";
 
 const Main = createComponent(() => {
   const apiKeys$ = new BehaviorSubject<ApiKeys>(loadApiKeys());
-  const paperContent$ = new BehaviorSubject<string | null>(null);
+  const paperInput$ = new BehaviorSubject<PaperInput | null>(null);
   const isOutlineEmpty$ = new BehaviorSubject<boolean>(false);
   const tooltipContent$ = new BehaviorSubject<string | null>(null);
   const itemToAsk$ = new BehaviorSubject<OutlineItem | null>(null);
   const onAsk$ = new Subject<{ item: OutlineItem; question: string }>();
 
-  const emptyPlaceholder = paperContent$.pipe(
-    map((content) => (content === null ? html`<div class="empty-placeholder">Paste to start</div>` : null)),
+  const setPaperInput = (nextInput: PaperInput | null) => {
+    paperInput$.next(nextInput);
+  };
+
+  const openFilePicker = async () => {
+    setPaperInput(await pickPaperInput());
+  };
+
+  const emptyPlaceholder = paperInput$.pipe(
+    map((content) =>
+      content === null
+        ? html`
+            <div class="empty-placeholder">
+              <button class="empty-placeholder-trigger" type="button" @click=${openFilePicker}>
+                Paste or upload to start
+              </button>
+            </div>
+          `
+        : null,
+    ),
   );
 
   const outlineComponent$ = OutlineComponent({
     apiKeys$,
-    paperContent$,
+    paperInput$,
     isEmpty$: isOutlineEmpty$,
     tooltipContent$,
     itemToAsk$,
@@ -41,8 +60,8 @@ const Main = createComponent(() => {
       return !(target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.contentEditable === "true");
     }),
     map((event) => event.clipboardData?.getData("text/plain") ?? ""),
-    map((content) => (content.trim() ? content : null)),
-    tap((text) => paperContent$.next(text)),
+    map(normalizePastedPaperInput),
+    tap(setPaperInput),
   );
 
   const template$ = of(html`

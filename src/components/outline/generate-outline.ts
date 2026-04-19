@@ -1,10 +1,11 @@
 import { JSONParser } from "@streamparser/json";
 import { OpenAI } from "openai";
 import { Observable } from "rxjs";
+import type { PaperInput } from "../../lib/paper-input";
 
 export interface GenerateOutlineParams {
   apiKey: string;
-  content: string;
+  input: PaperInput;
   parent?: OutlineItem;
   fullOutline?: OutlineItem[];
 }
@@ -52,40 +53,9 @@ export function generateOutline$(params: GenerateOutlineParams): Observable<Outl
       try {
         const parentContext = params.parent ? buildParentContext(params.fullOutline ?? [], params.parent) : "";
 
-        const developerPrompt = `
-Help user outline the following content:
+        const developerPrompt = createDeveloperPrompt(params.input);
 
-\`\`\`
-${params.content.trim()}
-\`\`\`       
-        `.trim();
-
-        const userPrompt = `${
-          params.parent && params.parent.source === "question"
-            ? `Help me answer the question "${params.parent.bulletPoint}". Generate a list of bullet points that directly answer this question.`
-            : params.parent
-              ? `Expand on "${params.parent.bulletPoint}". Generate a list of bullet points that directly address this point.`
-              : "Distill the following content into a list of high-level bullet points."
-        } Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content. Each bullet point must cite at least one piece of text from the source document.
-
-Gather relevant sources across the content before you distill them to bullet points.
-Source text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the source.
-Compress sources into short bullet points that represent the most important ideas from this content:
-
-\`\`\`
-${parentContext}
-\`\`\`
-
-Respond in this JSON format:
-{
-  outline: [
-    {
-      sources: string[],
-      bulletPoint: string
-    }
-  ]
-}
-        `.trim();
+        const userPrompt = createUserPrompt(params.input, parentContext, params.parent);
 
         const responseStream = await openai.responses.create({
           model: "gpt-5.4-mini",
@@ -96,7 +66,7 @@ Respond in this JSON format:
             },
             {
               role: "user",
-              content: userPrompt,
+              content: await createUserInputContent(params.input, userPrompt),
             },
           ],
           text: { format: { type: "json_object" }, verbosity: "low" },
@@ -121,6 +91,80 @@ Respond in this JSON format:
       }
     })();
   });
+}
+
+function createDeveloperPrompt(input: PaperInput) {
+  if (input.kind !== "text") {
+    return "Help the user outline the provided document";
+  }
+
+  return `Help user outline the following content:
+
+\`\`\`
+${input.text.trim()}
+\`\`\``;
+}
+
+function createUserPrompt(input: PaperInput, parentContext: string, parent?: OutlineItem) {
+  return `${
+          parent && parent.source === "question"
+            ? `Help me answer the question "${parent.bulletPoint}". Generate a list of bullet points that directly answer this question.`
+            : parent
+              ? `Expand on "${parent.bulletPoint}". Generate a list of bullet points that directly address this point.`
+              : "Distill the following content into a list of high-level bullet points."
+        } Each bullet point should be one short sentence that captures a key idea or concept. Focus on the main points and hide unnecessary details to help the user quickly understand the content. Each bullet point must cite at least one piece of text from the source document.
+
+Gather relevant sources across the content before you distill them to bullet points.
+Source text must be an identical substring from the original document. Do NOT paraphrase or fix typos or punctuation. The original text must be preserved exactly in the source.
+Compress sources into short bullet points that represent the most important ideas from this content:
+
+\`\`\`
+${parentContext}
+\`\`\`
+
+${input.kind === "attachment" ? "Use the attached file as the source document.\n\n" : ""}
+
+Respond in this JSON format:
+{
+  outline: [
+    {
+      sources: string[],
+      bulletPoint: string
+    }
+  ]
+}
+        `.trim();
+}
+
+async function createUserInputContent(input: PaperInput, prompt: string) {
+  if (input.kind === "text") {
+    return prompt;
+  }
+
+  return [
+    {
+      type: "input_file" as const,
+      filename: input.file.name,
+      file_data: await encodeFileAsDataUrl(input.file),
+    },
+    {
+      type: "input_text" as const,
+      text: prompt,
+    },
+  ];
+}
+
+async function encodeFileAsDataUrl(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  const mimeType = file.type || "application/octet-stream";
+
+  return `data:${mimeType};base64,${btoa(binary)}`;
 }
 
 // Helper function to build the full ancestral context

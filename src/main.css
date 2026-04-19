@@ -241,6 +241,14 @@ generative-image {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--color-text-secondary);
-  font-style: italic;
+
+  .empty-placeholder-trigger {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    text-decoration: underline;
+    text-underline-offset: 0.2ch;
+  }
 }
